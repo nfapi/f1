@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#090b0e">
     <meta
       name="description"
-      content="Explora y reproduce la vuelta más rápida de Pierre Gasly en la clasificación de Monza 2026 con datos de OpenF1."
+      content="Compará la vuelta de pole de Pierre Gasly con la mejor vuelta de Lance Stroll en la clasificación de Monza 2026, con datos de OpenF1."
     >
     <title>Monza · Vuelta de pole — OpenF1</title>
     <link rel="preconnect" href="https://api.openf1.org">
@@ -35,7 +35,7 @@
         <div>
           <p class="eyebrow"><span>01</span> QUALIFYING / ITALIAN GRAND PRIX</p>
           <h1 id="page-title">Una vuelta.<br><span>Al límite.</span></h1>
-          <p class="intro-copy">Seguí cada metro de la vuelta más rápida de Pierre Gasly en Monza.</p>
+          <p class="intro-copy">Compará la vuelta de pole de Gasly con la mejor vuelta de Lance Stroll.</p>
         </div>
         <div class="session-stamp" aria-label="Clasificación de Monza, temporada 2026">
           <span class="stamp-label">ROUND</span>
@@ -67,7 +67,7 @@
               id="track-map"
               viewBox="0 0 1000 700"
               role="img"
-              aria-label="Circuito de Monza y posición del auto durante la vuelta"
+              aria-label="Comparación de las vueltas de Pierre Gasly y Lance Stroll en Monza"
               preserveAspectRatio="xMidYMid meet"
             >
               <defs>
@@ -79,15 +79,23 @@
                   </feMerge>
                 </filter>
                 <linearGradient id="lap-gradient" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#ff4545"></stop>
-                  <stop offset="100%" stop-color="#ff9c64"></stop>
+                  <stop offset="0%" stop-color="#0090ff"></stop>
+                  <stop offset="100%" stop-color="#55c5ff"></stop>
                 </linearGradient>
               </defs>
               <g id="track-layers" class="track-layers" aria-hidden="true">
                 <path id="track-shadow" class="track-shadow"></path>
                 <path id="track-base" class="track-base"></path>
+                <path id="gasly-track" class="driver-track gasly-track"></path>
+                <path id="stroll-track" class="driver-track stroll-track"></path>
                 <path id="track-progress" class="track-progress"></path>
+                <path id="stroll-progress" class="stroll-progress"></path>
                 <g id="car-marker" class="car-marker">
+                  <circle class="marker-halo" r="19"></circle>
+                  <circle class="marker-core" r="8"></circle>
+                  <path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path>
+                </g>
+                <g id="stroll-marker" class="car-marker stroll-marker">
                   <circle class="marker-halo" r="19"></circle>
                   <circle class="marker-core" r="8"></circle>
                   <path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path>
@@ -100,8 +108,8 @@
               <button class="retry-button" id="retry-button" type="button">VOLVER A INTENTAR</button>
             </div>
             <div class="map-legend">
-              <span><i class="legend-line legend-lap" aria-hidden="true"></i>VUELTA DE GASLY</span>
-              <span><i class="legend-point" aria-hidden="true"></i>AUTO #10</span>
+              <span><i class="legend-line legend-lap" aria-hidden="true"></i>GASLY <b>#10</b></span>
+              <span><i class="legend-line legend-stroll" aria-hidden="true"></i>STROLL <b>#18</b></span>
             </div>
           </div>
 
@@ -215,7 +223,106 @@
               </div>
             </div>
           </div>
+          <div class="telemetry-card stroll-telemetry" aria-label="Telemetría de Lance Stroll">
+            <div class="telemetry-heading">
+              <span class="eyebrow">LIVE TELEMETRY <span class="heading-index">/ STROLL #18</span></span>
+              <span class="telemetry-unit">ASTON MARTIN</span>
+            </div>
+            <div class="telemetry-grid">
+              <div class="telemetry-value telemetry-speed">
+                <span>VELOCIDAD</span>
+                <strong><span id="stroll-speed-value">---</span><small> km/h</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal stroll-throttle-meter">
+                <span>ACELERADOR</span>
+                <div class="pedal-reading">
+                  <strong><span id="stroll-throttle-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Acelerador de Lance Stroll" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="stroll-throttle-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-gear">
+                <span>CAMBIO</span>
+                <strong><span id="stroll-gear-value">-</span><small>ª</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal brake-meter">
+                <span>FRENO</span>
+                <div class="pedal-reading">
+                  <strong><span id="stroll-brake-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Freno de Lance Stroll" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="stroll-brake-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-rpm">
+                <span>RPM</span>
+                <strong><span id="stroll-rpm-value">----</span><small> rpm</small></strong>
+              </div>
+            </div>
+          </div>
         </aside>
+      </section>
+
+      <section class="comparison-panel panel" aria-labelledby="comparison-title">
+        <div class="comparison-heading">
+          <div>
+            <p class="eyebrow">DIRECT COMPARISON <span class="heading-index">/ 05</span></p>
+            <h2 id="comparison-title">Gasly <span>vs.</span> Stroll</h2>
+          </div>
+          <p class="comparison-caption">MEJOR VUELTA DE CADA PILOTO · CLASIFICACIÓN</p>
+        </div>
+        <div class="comparison-summary">
+          <div class="comparison-driver gasly-comparison">
+            <div class="comparison-driver-label">
+              <span class="comparison-swatch"></span>
+              <span>PIERRE GASLY <small>#10 · ALPINE</small></span>
+            </div>
+            <strong id="comparison-gasly-time">--:--.---</strong>
+            <span class="comparison-lap">VUELTA <b id="comparison-gasly-lap">--</b></span>
+          </div>
+          <div class="comparison-gap">
+            <span>GAP EN PISTA</span>
+            <strong id="comparison-gap">+--.---</strong>
+            <span id="comparison-leader">CARGANDO COMPARACIÓN</span>
+            <small class="comparison-gap-context">DIFERENCIA AL MISMO PUNTO DEL CIRCUITO</small>
+          </div>
+          <div class="comparison-driver stroll-comparison">
+            <div class="comparison-driver-label">
+              <span class="comparison-swatch"></span>
+              <span>LANCE STROLL <small>#18 · ASTON MARTIN</small></span>
+            </div>
+            <strong id="comparison-stroll-time">--:--.---</strong>
+            <span class="comparison-lap">VUELTA <b id="comparison-stroll-lap">--</b></span>
+          </div>
+        </div>
+        <div class="sector-comparison" role="table" aria-label="Diferencia entre los sectores de ambas vueltas">
+          <div class="sector-comparison-row sector-comparison-header" role="row">
+            <span role="columnheader">SECTOR</span>
+            <span role="columnheader">GASLY</span>
+            <span role="columnheader">STROLL</span>
+            <span role="columnheader">DIFERENCIA</span>
+          </div>
+          <div class="sector-comparison-row" role="row" data-comparison-sector="0">
+            <span role="rowheader">S1</span>
+            <span id="comparison-gasly-s1">--.---</span>
+            <span id="comparison-stroll-s1">--.---</span>
+            <span id="comparison-gap-s1">--.---</span>
+          </div>
+          <div class="sector-comparison-row" role="row" data-comparison-sector="1">
+            <span role="rowheader">S2</span>
+            <span id="comparison-gasly-s2">--.---</span>
+            <span id="comparison-stroll-s2">--.---</span>
+            <span id="comparison-gap-s2">--.---</span>
+          </div>
+          <div class="sector-comparison-row" role="row" data-comparison-sector="2">
+            <span role="rowheader">S3</span>
+            <span id="comparison-gasly-s3">--.---</span>
+            <span id="comparison-stroll-s3">--.---</span>
+            <span id="comparison-gap-s3">--.---</span>
+          </div>
+        </div>
+        <p class="comparison-error" id="comparison-error" role="status" hidden></p>
       </section>
 
       <footer class="page-footer">
