@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0e">
+    <meta
+      name="description"
+      content="Explora y reproduce la vuelta más rápida de Pierre Gasly en la clasificación de Monza 2026 con datos de OpenF1."
+    >
+    <title>Monza · Vuelta de pole — OpenF1</title>
+    <link rel="preconnect" href="https://api.openf1.org">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="#" aria-label="OpenF1 Lab, inicio">
+          <span class="wordmark-mark" aria-hidden="true">F1</span>
+          <span class="wordmark-copy">OPENF1 <span>LAB</span></span>
+        </a>
+        <div class="topbar-context">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>TELEMETRÍA HISTÓRICA</span>
+          <span class="topbar-divider" aria-hidden="true"></span>
+          <span>MONZA · 2026</span>
+        </div>
+        <a class="api-link" href="https://openf1.org/docs/#api-endpoints" target="_blank" rel="noreferrer">
+          DATOS OPENF1 <span aria-hidden="true">↗</span>
+        </a>
+      </header>
+
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow"><span>01</span> QUALIFYING / ITALIAN GRAND PRIX</p>
+          <h1 id="page-title">Una vuelta.<br><span>Al límite.</span></h1>
+          <p class="intro-copy">Seguí cada metro de la vuelta más rápida de Pierre Gasly en Monza.</p>
+        </div>
+        <div class="session-stamp" aria-label="Clasificación de Monza, temporada 2026">
+          <span class="stamp-label">ROUND</span>
+          <span class="stamp-value">15<span>/</span>24</span>
+          <span class="stamp-rule" aria-hidden="true"></span>
+          <span class="stamp-label">TEMPORADA</span>
+          <span class="stamp-value stamp-year">2026</span>
+        </div>
+      </section>
+
+      <section class="dashboard" aria-label="Reproductor de vuelta de clasificación">
+        <article class="track-panel panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">CIRCUIT VIEW <span class="heading-index">/ 01</span></p>
+              <h2 id="circuit-name">Autodromo Nazionale Monza</h2>
+            </div>
+            <span class="data-status" id="data-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="status-label">CONECTANDO</span>
+            </span>
+          </div>
+
+          <div class="track-stage" id="track-stage">
+            <div class="track-watermark" aria-hidden="true">MONZA</div>
+            <div class="track-coordinate" aria-hidden="true">45°37′ N&nbsp; 9°17′ E</div>
+            <svg
+              class="track-map"
+              id="track-map"
+              viewBox="0 0 1000 700"
+              role="img"
+              aria-label="Circuito de Monza y posición del auto durante la vuelta"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <defs>
+                <filter id="marker-glow" x="-300%" y="-300%" width="700%" height="700%">
+                  <feGaussianBlur stdDeviation="8" result="blur"></feGaussianBlur>
+                  <feMerge>
+                    <feMergeNode in="blur"></feMergeNode>
+                    <feMergeNode in="SourceGraphic"></feMergeNode>
+                  </feMerge>
+                </filter>
+                <linearGradient id="lap-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#ff4545"></stop>
+                  <stop offset="100%" stop-color="#ff9c64"></stop>
+                </linearGradient>
+              </defs>
+              <g id="track-layers" class="track-layers" aria-hidden="true">
+                <path id="track-shadow" class="track-shadow"></path>
+                <path id="track-base" class="track-base"></path>
+                <path id="track-progress" class="track-progress"></path>
+                <g id="car-marker" class="car-marker">
+                  <circle class="marker-halo" r="19"></circle>
+                  <circle class="marker-core" r="8"></circle>
+                  <path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path>
+                </g>
+              </g>
+            </svg>
+            <div class="track-overlay" id="track-overlay" hidden>
+              <span class="overlay-icon" aria-hidden="true">!</span>
+              <p id="overlay-message"></p>
+              <button class="retry-button" id="retry-button" type="button">VOLVER A INTENTAR</button>
+            </div>
+            <div class="map-legend">
+              <span><i class="legend-line legend-lap" aria-hidden="true"></i>VUELTA DE GASLY</span>
+              <span><i class="legend-point" aria-hidden="true"></i>AUTO #10</span>
+            </div>
+          </div>
+
+          <div class="replay-controls">
+            <button class="play-button" id="play-button" type="button" aria-label="Reproducir vuelta" disabled>
+              <svg id="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5v13l10-6.5z"></path>
+              </svg>
+              <svg id="pause-icon" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"></path>
+              </svg>
+            </button>
+            <span class="elapsed-time" id="elapsed-time">0:00.0</span>
+            <label class="visually-hidden" for="lap-seek">Posición en la vuelta</label>
+            <input id="lap-seek" class="seek-slider" type="range" min="0" max="100" step="0.1" value="0" disabled>
+            <span class="total-time" id="lap-time">--:--.---</span>
+            <label class="visually-hidden" for="playback-speed">Velocidad de reproducción</label>
+            <select id="playback-speed" class="speed-select" aria-label="Velocidad de reproducción" disabled>
+              <option value="1">1×</option>
+              <option value="2">2×</option>
+              <option value="4" selected>4×</option>
+              <option value="8">8×</option>
+            </select>
+          </div>
+        </article>
+
+        <aside class="driver-panel panel" aria-label="Datos de Pierre Gasly">
+          <div class="driver-card">
+            <div class="driver-card-top">
+              <span class="eyebrow">DRIVER PROFILE <span class="heading-index">/ 02</span></span>
+              <span class="driver-number">10</span>
+            </div>
+            <div class="driver-identity">
+              <div class="driver-avatar" aria-hidden="true">PG</div>
+              <div>
+                <p class="driver-first-name" id="driver-first-name">PIERRE</p>
+                <h2 class="driver-name" id="driver-last-name">GASLY</h2>
+              </div>
+            </div>
+            <div class="team-line">
+              <span class="team-swatch" id="team-swatch"></span>
+              <span id="team-name">ALPINE</span>
+              <span class="team-tag" id="result-tag">POLE LAP</span>
+            </div>
+          </div>
+
+          <div class="lap-card">
+            <div class="lap-heading">
+              <span class="eyebrow">BEST LAP <span class="heading-index">/ 03</span></span>
+              <span class="lap-badge" id="lap-badge">P1</span>
+            </div>
+            <div class="lap-time-display" id="lap-time-display">--<span id="lap-time-fraction">.---</span></div>
+            <div class="lap-meta">
+              <span>VUELTA <strong id="lap-number">--</strong></span>
+              <span class="lap-date" id="session-date">MONZA · 05 SEP 2026</span>
+            </div>
+            <div class="sector-list" aria-label="Tiempos por sector">
+              <div class="sector-row" data-sector="0">
+                <span class="sector-label"><i></i> S1</span>
+                <span class="sector-value" id="sector-1">--.---</span>
+                <span class="sector-state">01</span>
+              </div>
+              <div class="sector-row" data-sector="1">
+                <span class="sector-label"><i></i> S2</span>
+                <span class="sector-value" id="sector-2">--.---</span>
+                <span class="sector-state">02</span>
+              </div>
+              <div class="sector-row" data-sector="2">
+                <span class="sector-label"><i></i> S3</span>
+                <span class="sector-value" id="sector-3">--.---</span>
+                <span class="sector-state">03</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-heading">
+              <span class="eyebrow">LIVE TELEMETRY <span class="heading-index">/ 04</span></span>
+              <span class="telemetry-unit">LAP DATA</span>
+            </div>
+            <div class="telemetry-grid">
+              <div class="telemetry-value telemetry-speed">
+                <span>VELOCIDAD</span>
+                <strong><span id="speed-value">---</span><small> km/h</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal throttle-meter">
+                <span>ACELERADOR</span>
+                <div class="pedal-reading">
+                  <strong><span id="throttle-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Acelerador" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="throttle-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-gear">
+                <span>CAMBIO</span>
+                <strong><span id="gear-value">-</span><small>ª</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal brake-meter">
+                <span>FRENO</span>
+                <div class="pedal-reading">
+                  <strong><span id="brake-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Freno" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="brake-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-rpm">
+                <span>RPM</span>
+                <strong><span id="rpm-value">----</span><small> rpm</small></strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="page-footer">
+        <p>DATOS PROPORCIONADOS POR <a href="https://openf1.org" target="_blank" rel="noreferrer">OPENF1</a></p>
+        <p>REPRODUCCIÓN A PARTIR DE POSICIONES Y TELEMETRÍA HISTÓRICAS</p>
+      </footer>
+    </main>
+  </body>
+</html>
