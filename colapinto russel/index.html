@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0e">
+    <meta
+      name="description"
+      content="Compará la mejor vuelta de Franco Colapinto con la vuelta de pole de George Russell en la Sprint Qualifying de Singapur 2026, con datos de OpenF1."
+    >
+    <title>Singapur · Sprint Qualifying — OpenF1</title>
+    <link rel="preconnect" href="https://api.openf1.org">
+    <link rel="preconnect" href="https://tile.openstreetmap.org">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="#" aria-label="OpenF1 Lab, inicio">
+          <span class="wordmark-mark" aria-hidden="true">F1</span>
+          <span class="wordmark-copy">OPENF1 <span>LAB</span></span>
+        </a>
+        <div class="topbar-context">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>TELEMETRÍA HISTÓRICA</span>
+          <span class="topbar-divider" aria-hidden="true"></span>
+          <span>SINGAPUR · 2026</span>
+        </div>
+        <a class="api-link" href="https://openf1.org/docs/#api-endpoints" target="_blank" rel="noreferrer">
+          DATOS OPENF1 <span aria-hidden="true">↗</span>
+        </a>
+      </header>
+
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow"><span>01</span> SPRINT QUALIFYING / SINGAPORE GRAND PRIX</p>
+          <h1 id="page-title">Una vuelta.<br><span>Al límite.</span></h1>
+          <p class="intro-copy">Compará la mejor vuelta de Franco Colapinto con la vuelta de pole de George Russell.</p>
+        </div>
+        <div class="session-stamp" aria-label="Sprint Qualifying de Singapur, temporada 2026">
+          <span class="stamp-label">ROUND</span>
+          <span class="stamp-value">21<span>/</span>24</span>
+          <span class="stamp-rule" aria-hidden="true"></span>
+          <span class="stamp-label">TEMPORADA</span>
+          <span class="stamp-value stamp-year">2026</span>
+        </div>
+      </section>
+
+      <section class="dashboard" aria-label="Reproductor de vuelta de clasificación">
+        <article class="track-panel panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">CIRCUIT VIEW <span class="heading-index">/ 01</span></p>
+              <h2 id="circuit-name">Marina Bay Street Circuit</h2>
+            </div>
+            <div class="panel-tools">
+              <label class="map-toggle">
+                <input id="osm-toggle" type="checkbox" checked>
+                <span class="map-toggle-track" aria-hidden="true"><span></span></span>
+                <span class="map-toggle-label">OPENSTREETMAP</span>
+              </label>
+              <span class="data-status" id="data-status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span id="status-label">CONECTANDO</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="track-stage" id="track-stage">
+            <div class="osm-map" id="osm-map" role="region" aria-label="Mapa base de OpenStreetMap alineado con el circuito de Marina Bay"></div>
+            <p class="map-error" id="map-error" role="status" hidden></p>
+            <div class="track-watermark" aria-hidden="true">MARINA BAY</div>
+            <div class="track-coordinate" aria-hidden="true">1°17′ N&nbsp; 103°51′ E</div>
+            <svg
+              class="track-map"
+              id="track-map"
+              viewBox="0 0 1000 700"
+              role="img"
+              aria-label="Comparación de las vueltas de Franco Colapinto y George Russell en Singapur"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <defs>
+                <filter id="marker-glow" x="-300%" y="-300%" width="700%" height="700%">
+                  <feGaussianBlur stdDeviation="8" result="blur"></feGaussianBlur>
+                  <feMerge>
+                    <feMergeNode in="blur"></feMergeNode>
+                    <feMergeNode in="SourceGraphic"></feMergeNode>
+                  </feMerge>
+                </filter>
+                <linearGradient id="lap-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#00A1E8"></stop>
+                  <stop offset="100%" stop-color="#55c5ff"></stop>
+                </linearGradient>
+              </defs>
+              <g id="track-layers" class="track-layers" aria-hidden="true">
+                <path id="track-shadow" class="track-shadow"></path>
+                <path id="track-base" class="track-base"></path>
+                <path id="colapinto-track" class="driver-track colapinto-track"></path>
+                <path id="russell-track" class="driver-track russell-track"></path>
+                <path id="track-progress" class="track-progress"></path>
+                <path id="russell-progress" class="russell-progress"></path>
+                <g id="car-marker" class="car-marker">
+                  <circle class="marker-halo" r="19"></circle>
+                  <circle class="marker-core" r="8"></circle>
+                  <path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path>
+                </g>
+                <g id="russell-marker" class="car-marker russell-marker">
+                  <circle class="marker-halo" r="19"></circle>
+                  <circle class="marker-core" r="8"></circle>
+                  <path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path>
+                </g>
+              </g>
+            </svg>
+            <div class="track-overlay" id="track-overlay" hidden>
+              <span class="overlay-icon" aria-hidden="true">!</span>
+              <p id="overlay-message"></p>
+              <button class="retry-button" id="retry-button" type="button">VOLVER A INTENTAR</button>
+            </div>
+            <div class="map-legend">
+              <span><i class="legend-line legend-lap" aria-hidden="true"></i>COLAPINTO <b>#43</b></span>
+              <span><i class="legend-line legend-russell" aria-hidden="true"></i>RUSSELL <b>#63</b></span>
+            </div>
+            <span class="map-hint" id="map-hint" hidden>OPENSTREETMAP · PISTA ALINEADA</span>
+          </div>
+
+          <div class="replay-controls">
+            <button class="play-button" id="play-button" type="button" aria-label="Reproducir vuelta" disabled>
+              <svg id="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5v13l10-6.5z"></path>
+              </svg>
+              <svg id="pause-icon" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"></path>
+              </svg>
+            </button>
+            <span class="elapsed-time" id="elapsed-time">0:00.0</span>
+            <label class="visually-hidden" for="lap-seek">Posición en la vuelta</label>
+            <input id="lap-seek" class="seek-slider" type="range" min="0" max="100" step="0.1" value="0" disabled>
+            <span class="total-time" id="lap-time">--:--.---</span>
+            <label class="visually-hidden" for="playback-speed">Velocidad de reproducción</label>
+            <select id="playback-speed" class="speed-select" aria-label="Velocidad de reproducción" disabled>
+              <option value="1">1×</option>
+              <option value="2">2×</option>
+              <option value="4" selected>4×</option>
+              <option value="8">8×</option>
+            </select>
+          </div>
+        </article>
+
+        <aside class="driver-panel panel" aria-label="Datos de Franco Colapinto">
+          <div class="driver-card">
+            <div class="driver-card-top">
+              <span class="eyebrow">DRIVER PROFILE <span class="heading-index">/ 02</span></span>
+              <span class="driver-number">43</span>
+            </div>
+            <div class="driver-identity">
+              <div class="driver-avatar" aria-hidden="true">FC</div>
+              <div>
+                <p class="driver-first-name" id="driver-first-name">FRANCO</p>
+                <h2 class="driver-name" id="driver-last-name">COLAPINTO</h2>
+              </div>
+            </div>
+            <div class="team-line">
+              <span class="team-swatch" id="team-swatch"></span>
+              <span id="team-name">ALPINE</span>
+              <span class="team-tag" id="result-tag">BEST LAP · P11</span>
+            </div>
+          </div>
+
+          <div class="lap-card">
+            <div class="lap-heading">
+              <span class="eyebrow">BEST LAP <span class="heading-index">/ 03</span></span>
+              <span class="lap-badge" id="lap-badge">P11</span>
+            </div>
+            <div class="lap-time-display" id="lap-time-display">--<span id="lap-time-fraction">.---</span></div>
+            <div class="lap-meta">
+              <span>VUELTA <strong id="lap-number">--</strong></span>
+              <span class="lap-date" id="session-date">SINGAPUR · 09 OCT 2026</span>
+            </div>
+            <div class="sector-list" aria-label="Tiempos por sector">
+              <div class="sector-row" data-sector="0">
+                <span class="sector-label"><i></i> S1</span>
+                <span class="sector-value" id="sector-1">--.---</span>
+                <span class="sector-state">01</span>
+              </div>
+              <div class="sector-row" data-sector="1">
+                <span class="sector-label"><i></i> S2</span>
+                <span class="sector-value" id="sector-2">--.---</span>
+                <span class="sector-state">02</span>
+              </div>
+              <div class="sector-row" data-sector="2">
+                <span class="sector-label"><i></i> S3</span>
+                <span class="sector-value" id="sector-3">--.---</span>
+                <span class="sector-state">03</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="telemetry-heading">
+              <span class="eyebrow">LIVE TELEMETRY <span class="heading-index">/ 04</span></span>
+              <span class="telemetry-unit">LAP DATA</span>
+            </div>
+            <div class="telemetry-grid">
+              <div class="telemetry-value telemetry-speed">
+                <span>VELOCIDAD</span>
+                <strong><span id="speed-value">---</span><small> km/h</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal throttle-meter">
+                <span>ACELERADOR</span>
+                <div class="pedal-reading">
+                  <strong><span id="throttle-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Acelerador" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="throttle-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-gear">
+                <span>CAMBIO</span>
+                <strong><span id="gear-value">-</span><small>ª</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal brake-meter">
+                <span>FRENO</span>
+                <div class="pedal-reading">
+                  <strong><span id="brake-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Freno" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="brake-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-rpm">
+                <span>RPM</span>
+                <strong><span id="rpm-value">----</span><small> rpm</small></strong>
+              </div>
+            </div>
+          </div>
+          <div class="telemetry-card russell-telemetry" aria-label="Telemetría de George Russell">
+            <div class="telemetry-heading">
+              <span class="eyebrow">LIVE TELEMETRY <span class="heading-index">/ RUSSELL #63</span></span>
+              <span class="telemetry-unit">MERCEDES</span>
+            </div>
+            <div class="telemetry-grid">
+              <div class="telemetry-value telemetry-speed">
+                <span>VELOCIDAD</span>
+                <strong><span id="russell-speed-value">---</span><small> km/h</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal russell-throttle-meter">
+                <span>ACELERADOR</span>
+                <div class="pedal-reading">
+                  <strong><span id="russell-throttle-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Acelerador de George Russell" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="russell-throttle-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-gear">
+                <span>CAMBIO</span>
+                <strong><span id="russell-gear-value">-</span><small>ª</small></strong>
+              </div>
+              <div class="telemetry-value telemetry-pedal brake-meter">
+                <span>FRENO</span>
+                <div class="pedal-reading">
+                  <strong><span id="russell-brake-value">--</span><small>%</small></strong>
+                  <div class="pedal-track" role="meter" aria-label="Freno de George Russell" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="pedal-fill" id="russell-brake-fill"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="telemetry-value telemetry-rpm">
+                <span>RPM</span>
+                <strong><span id="russell-rpm-value">----</span><small> rpm</small></strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="comparison-panel panel" aria-labelledby="comparison-title">
+        <div class="comparison-heading">
+          <div>
+            <p class="eyebrow">DIRECT COMPARISON <span class="heading-index">/ 05</span></p>
+            <h2 id="comparison-title">Colapinto <span>vs.</span> Russell</h2>
+          </div>
+          <p class="comparison-caption">MEJOR VUELTA DE CADA PILOTO · SPRINT QUALIFYING</p>
+        </div>
+        <div class="comparison-summary">
+          <div class="comparison-driver colapinto-comparison">
+            <div class="comparison-driver-label">
+              <span class="comparison-swatch"></span>
+              <span>FRANCO COLAPINTO <small>#43 · ALPINE</small></span>
+            </div>
+            <strong id="comparison-colapinto-time">--:--.---</strong>
+            <span class="comparison-lap">VUELTA <b id="comparison-colapinto-lap">--</b></span>
+          </div>
+          <div class="comparison-gap">
+            <span>GAP EN PISTA</span>
+            <strong id="comparison-gap">+--.---</strong>
+            <span id="comparison-leader">CARGANDO COMPARACIÓN</span>
+            <small class="comparison-gap-context">DIFERENCIA AL MISMO PUNTO DEL CIRCUITO</small>
+          </div>
+          <div class="comparison-driver russell-comparison">
+            <div class="comparison-driver-label">
+              <span class="comparison-swatch"></span>
+              <span>GEORGE RUSSELL <small>#63 · MERCEDES</small></span>
+            </div>
+            <strong id="comparison-russell-time">--:--.---</strong>
+            <span class="comparison-lap">VUELTA <b id="comparison-russell-lap">--</b></span>
+          </div>
+        </div>
+        <div class="sector-comparison" role="table" aria-label="Diferencia entre los sectores de ambas vueltas">
+          <div class="sector-comparison-row sector-comparison-header" role="row">
+            <span role="columnheader">SECTOR</span>
+            <span role="columnheader">COLAPINTO</span>
+            <span role="columnheader">RUSSELL</span>
+            <span role="columnheader">DIFERENCIA</span>
+          </div>
+          <div class="sector-comparison-row" role="row" data-comparison-sector="0">
+            <span role="rowheader">S1</span>
+            <span id="comparison-colapinto-s1">--.---</span>
+            <span id="comparison-russell-s1">--.---</span>
+            <span id="comparison-gap-s1">--.---</span>
+          </div>
+          <div class="sector-comparison-row" role="row" data-comparison-sector="1">
+            <span role="rowheader">S2</span>
+            <span id="comparison-colapinto-s2">--.---</span>
+            <span id="comparison-russell-s2">--.---</span>
+            <span id="comparison-gap-s2">--.---</span>
+          </div>
+          <div class="sector-comparison-row" role="row" data-comparison-sector="2">
+            <span role="rowheader">S3</span>
+            <span id="comparison-colapinto-s3">--.---</span>
+            <span id="comparison-russell-s3">--.---</span>
+            <span id="comparison-gap-s3">--.---</span>
+          </div>
+        </div>
+        <p class="comparison-error" id="comparison-error" role="status" hidden></p>
+      </section>
+
+      <footer class="page-footer">
+        <p>DATOS PROPORCIONADOS POR <a href="https://openf1.org" target="_blank" rel="noreferrer">OPENF1</a></p>
+        <p>REPRODUCCIÓN A PARTIR DE POSICIONES Y TELEMETRÍA HISTÓRICAS</p>
+      </footer>
+    </main>
+  </body>
+</html>
