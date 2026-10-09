@@ -4,6 +4,11 @@ const API_ROOT = "https://api.openf1.org/v1";
 const SESSION_KEY = 11357;
 const DRIVER_NUMBER = 10;
 const COMPARISON_DRIVER_NUMBER = 18;
+const TRACK_DISPLAY_SCALE = 0.9;
+const MONZA_TRACK_BOUNDS = [
+  [45.6118580, 9.2806903],
+  [45.6313621, 9.2968526],
+];
 const REQUEST_TIMEOUT_MS = 15000;
 const MAX_RATE_LIMIT_RETRIES = 2;
 
@@ -32,6 +37,10 @@ const elements = {
   lapTime: document.querySelector("#lap-time"),
   lapTimeDisplay: document.querySelector("#lap-time-display"),
   lapTimeFraction: document.querySelector("#lap-time-fraction"),
+  mapError: document.querySelector("#map-error"),
+  mapHint: document.querySelector("#map-hint"),
+  osmMap: document.querySelector("#osm-map"),
+  osmToggle: document.querySelector("#osm-toggle"),
   overlay: document.querySelector("#track-overlay"),
   overlayMessage: document.querySelector("#overlay-message"),
   pauseIcon: document.querySelector("#pause-icon"),
@@ -70,6 +79,8 @@ const elements = {
   throttleTrack: document.querySelector("#throttle-fill").parentElement,
   trackBase: document.querySelector("#track-base"),
   trackLayers: document.querySelector("#track-layers"),
+  trackMap: document.querySelector("#track-map"),
+  trackStage: document.querySelector("#track-stage"),
   trackProgress: document.querySelector("#track-progress"),
   trackShadow: document.querySelector("#track-shadow"),
 };
@@ -91,6 +102,81 @@ const state = {
   speed: 4,
   trackPoints: [],
 };
+
+let osmMap;
+
+function initializeOsmMap() {
+  if (osmMap) {
+    return;
+  }
+
+  if (!window.L) {
+    elements.mapError.textContent = "No se pudo cargar el mapa. Revisá tu conexión e intentá recargar la página.";
+    elements.mapError.hidden = false;
+    return;
+  }
+
+  osmMap = window.L.map(elements.osmMap, {
+    center: [45.6216103, 9.28877145],
+    zoom: 14,
+    dragging: false,
+    zoomControl: false,
+    scrollWheelZoom: false,
+    zoomSnap: 0.01,
+    doubleClickZoom: false,
+    touchZoom: false,
+    boxZoom: false,
+    keyboard: false,
+  });
+  osmMap.on("resize", fitMapToTrack);
+
+  const tiles = window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>',
+  }).addTo(osmMap);
+
+  tiles.on("tileerror", () => {
+    elements.mapError.textContent = "No se pudieron cargar algunos mosaicos de OpenStreetMap.";
+    elements.mapError.hidden = false;
+  });
+  tiles.on("tileload", () => {
+    elements.mapError.hidden = true;
+  });
+}
+
+function setMapVisibility(isVisible) {
+  elements.trackStage.classList.toggle("osm-visible", isVisible);
+  elements.osmMap.setAttribute("aria-hidden", String(!isVisible));
+  elements.mapHint.hidden = !isVisible;
+
+  if (isVisible) {
+    initializeOsmMap();
+    if (osmMap) {
+      window.requestAnimationFrame(() => osmMap.invalidateSize());
+    }
+  }
+}
+
+function fitMapToTrack() {
+  if (!osmMap || elements.trackLayers.hidden) {
+    return;
+  }
+
+  const trackBounds = elements.trackBase.getBBox();
+  const svgBounds = elements.trackMap.getBoundingClientRect();
+  const mapSize = osmMap.getSize();
+  const svgScale = Math.min(svgBounds.width / 1000, svgBounds.height / 700);
+  const targetWidth = trackBounds.width * svgScale;
+  const targetHeight = trackBounds.height * svgScale;
+  const paddingX = Math.max(0, (mapSize.x - targetWidth) / 2);
+  const paddingY = Math.max(0, (mapSize.y - targetHeight) / 2);
+
+  osmMap.fitBounds(MONZA_TRACK_BOUNDS, {
+    animate: false,
+    paddingBottomRight: [paddingX, paddingY],
+    paddingTopLeft: [paddingX, paddingY],
+  });
+}
 
 function buildApiUrl(endpoint, parameters) {
   const query = new URLSearchParams(parameters);
@@ -367,6 +453,7 @@ async function loadTelemetry(gaslyLap, strollLap) {
     throw new Error("OpenF1 no devolvió telemetría suficiente para los dos pilotos.");
   }
   drawTrack();
+  fitMapToTrack();
   renderProgress(0);
 }
 
@@ -396,7 +483,8 @@ function projectTrackPoints(locations) {
   }
 
   const margin = 75;
-  const scale = Math.min((1000 - margin * 2) / width, (700 - margin * 2) / height);
+  const scale = Math.min((1000 - margin * 2) / width, (700 - margin * 2) / height)
+    * TRACK_DISPLAY_SCALE;
   const offsetX = (1000 - width * scale) / 2;
   const offsetY = (700 - height * scale) / 2;
 
@@ -724,6 +812,11 @@ elements.playbackSpeed.addEventListener("change", () => {
   state.speed = Number(elements.playbackSpeed.value);
 });
 
+elements.osmToggle.addEventListener("change", () => {
+  setMapVisibility(elements.osmToggle.checked);
+});
+
 elements.retryButton.addEventListener("click", loadPage);
 
+setMapVisibility(elements.osmToggle.checked);
 loadPage();

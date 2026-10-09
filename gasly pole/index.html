@@ -10,7 +10,10 @@
     >
     <title>Monza · Vuelta de pole — OpenF1</title>
     <link rel="preconnect" href="https://api.openf1.org">
+    <link rel="preconnect" href="https://tile.openstreetmap.org">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -53,13 +56,22 @@
               <p class="eyebrow">CIRCUIT VIEW <span class="heading-index">/ 01</span></p>
               <h2 id="circuit-name">Autodromo Nazionale Monza</h2>
             </div>
-            <span class="data-status" id="data-status">
-              <span class="status-dot" aria-hidden="true"></span>
-              <span id="status-label">CONECTANDO</span>
-            </span>
+            <div class="panel-tools">
+              <label class="map-toggle">
+                <input id="osm-toggle" type="checkbox" checked>
+                <span class="map-toggle-track" aria-hidden="true"><span></span></span>
+                <span class="map-toggle-label">OPENSTREETMAP</span>
+              </label>
+              <span class="data-status" id="data-status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span id="status-label">CONECTANDO</span>
+              </span>
+            </div>
           </div>
 
           <div class="track-stage" id="track-stage">
+            <div class="osm-map" id="osm-map" role="region" aria-label="Mapa base de OpenStreetMap alineado con el circuito de Monza"></div>
+            <p class="map-error" id="map-error" role="status" hidden></p>
             <div class="track-watermark" aria-hidden="true">MONZA</div>
             <div class="track-coordinate" aria-hidden="true">45°37′ N&nbsp; 9°17′ E</div>
             <svg
@@ -111,6 +123,7 @@
               <span><i class="legend-line legend-lap" aria-hidden="true"></i>GASLY <b>#10</b></span>
               <span><i class="legend-line legend-stroll" aria-hidden="true"></i>STROLL <b>#18</b></span>
             </div>
+            <span class="map-hint" id="map-hint" hidden>OPENSTREETMAP · PISTA ALINEADA</span>
           </div>
 
           <div class="replay-controls">
