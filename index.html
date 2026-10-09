@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0e">
+    <meta name="description" content="Compará vueltas rápidas y telemetría histórica de pilotos de Fórmula 1 con datos de OpenF1.">
+    <title>F1 Lap Lab · Comparador OpenF1</title>
+    <link rel="preconnect" href="https://api.openf1.org">
+    <link rel="preconnect" href="https://tile.openstreetmap.org">
+    <link rel="preconnect" href="https://nominatim.openstreetmap.org">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="#" aria-label="F1 Lap Lab, inicio">
+          <span class="wordmark-mark" aria-hidden="true">F1</span>
+          <span class="wordmark-copy">F1 LAP <span>LAB</span></span>
+        </a>
+        <div class="topbar-context">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>TELEMETRÍA HISTÓRICA</span>
+          <span class="topbar-divider" aria-hidden="true"></span>
+          <span id="season-label">TEMPORADA 2026</span>
+        </div>
+        <a class="api-link" href="https://openf1.org/docs/#api-endpoints" target="_blank" rel="noreferrer">
+          DATOS OPENF1 <span aria-hidden="true">↗</span>
+        </a>
+      </header>
+
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow"><span>01</span> CIRCUIT / DRIVER / LAP</p>
+          <h1 id="page-title">Dos pilotos.<br><span>Una pista.</span></h1>
+          <p class="intro-copy">Elegí una fecha, sesión y dos pilotos para comparar sus mejores vueltas.</p>
+        </div>
+        <div class="session-stamp" aria-label="Temporada elegida">
+          <span class="stamp-label">TEMPORADA</span>
+          <span class="stamp-value">20<span>26</span></span>
+          <span class="stamp-rule" aria-hidden="true"></span>
+          <span class="stamp-label">MODO</span>
+          <span class="stamp-mode">COMPARACIÓN</span>
+        </div>
+      </section>
+
+      <section class="selector-panel panel" aria-label="Elegir meeting, sesión y pilotos">
+        <label class="select-field">
+          <span><i>01</i> MEETING</span>
+          <select id="meeting-select" disabled aria-label="Meeting de la temporada 2026">
+            <option>Cargando meetings…</option>
+          </select>
+        </label>
+        <label class="select-field">
+          <span><i>02</i> SESIÓN</span>
+          <select id="session-select" disabled aria-label="Sesión del meeting">
+            <option>Elegí un meeting</option>
+          </select>
+        </label>
+        <label class="select-field driver-select driver-a-field">
+          <span><i>03</i> PILOTO A</span>
+          <select id="driver-a-select" disabled aria-label="Primer piloto">
+            <option>Esperando sesión</option>
+          </select>
+        </label>
+        <label class="select-field driver-select driver-b-field">
+          <span><i>04</i> PILOTO B</span>
+          <select id="driver-b-select" disabled aria-label="Segundo piloto">
+            <option>Esperando sesión</option>
+          </select>
+        </label>
+        <span class="data-status" id="data-status" data-state="loading" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="status-label">CARGANDO 2026</span>
+        </span>
+      </section>
+
+      <section class="comparison-layout" aria-label="Comparación de vueltas">
+        <article class="driver-panel panel driver-a-panel" aria-label="Datos del piloto A">
+          <header class="driver-heading">
+            <span class="driver-index">A</span>
+            <span class="driver-number" id="driver-a-number">--</span>
+          </header>
+          <div class="driver-identity">
+            <div class="driver-avatar" id="driver-a-avatar" aria-hidden="true">A</div>
+            <div>
+              <p class="driver-first-name" id="driver-a-first">PILOTO</p>
+              <h2 class="driver-name" id="driver-a-last">A</h2>
+            </div>
+          </div>
+          <div class="team-line">
+            <span class="team-swatch"></span>
+            <span id="driver-a-team">EQUIPO</span>
+            <span class="team-tag" id="driver-a-result">MEJOR VUELTA</span>
+          </div>
+          <div class="best-lap">
+            <div class="section-label"><span>BEST LAP</span><b id="driver-a-position">--</b></div>
+            <strong class="best-time" id="driver-a-time">--:--.---</strong>
+            <span class="lap-meta">VUELTA <b id="driver-a-lap">--</b><span id="driver-a-date">—</span></span>
+            <div class="sector-list" aria-label="Tiempos por sector del piloto A">
+              <div class="sector-chip"><span>S1</span><b id="driver-a-s1">--.---</b></div>
+              <div class="sector-chip"><span>S2</span><b id="driver-a-s2">--.---</b></div>
+              <div class="sector-chip"><span>S3</span><b id="driver-a-s3">--.---</b></div>
+            </div>
+          </div>
+          <div class="telemetry-block">
+            <div class="section-label"><span>LIVE TELEMETRY</span><b id="driver-a-telemetry-tag">A</b></div>
+            <div class="telemetry-grid">
+              <div class="telemetry-value"><span>VELOCIDAD</span><strong><b id="driver-a-speed">---</b><small> km/h</small></strong></div>
+              <div class="telemetry-value pedal-cell"><span>ACELERADOR</span><strong><b id="driver-a-throttle">--</b><small>%</small></strong><div class="meter"><i id="driver-a-throttle-bar"></i></div></div>
+              <div class="telemetry-value"><span>CAMBIO</span><strong><b id="driver-a-gear">-</b><small>ª</small></strong></div>
+              <div class="telemetry-value pedal-cell brake-cell"><span>FRENO</span><strong><b id="driver-a-brake">--</b><small>%</small></strong><div class="meter"><i id="driver-a-brake-bar"></i></div></div>
+              <div class="telemetry-value"><span>RPM</span><strong><b id="driver-a-rpm">----</b><small> rpm</small></strong></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="circuit-panel panel">
+          <header class="circuit-heading">
+            <div>
+              <p class="eyebrow">CIRCUIT VIEW <span class="heading-index">/ 02</span></p>
+              <h2 id="circuit-name">Elegí una sesión</h2>
+            </div>
+            <label class="map-toggle">
+              <input id="map-toggle" type="checkbox" checked>
+              <span class="map-toggle-track" aria-hidden="true"><span></span></span>
+              <span class="map-toggle-label">OSM</span>
+            </label>
+          </header>
+          <div class="track-stage" id="track-stage">
+            <div class="osm-map" id="osm-map" role="region" aria-label="Mapa del circuito"></div>
+            <div class="map-scrim" aria-hidden="true"></div>
+            <div class="track-watermark" id="track-watermark" aria-hidden="true">F1</div>
+            <svg class="track-map" id="track-map" viewBox="0 0 1000 700" role="img" aria-label="Trazas de los dos pilotos sobre el circuito" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <filter id="marker-glow" x="-300%" y="-300%" width="700%" height="700%">
+                  <feGaussianBlur stdDeviation="8" result="blur"></feGaussianBlur>
+                  <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+                </filter>
+                <linearGradient id="lap-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#66d9c7"></stop>
+                  <stop offset="100%" stop-color="#a4eee1"></stop>
+                </linearGradient>
+              </defs>
+              <g id="track-layers" class="track-layers" hidden aria-hidden="true">
+                <path id="track-shadow" class="track-shadow"></path>
+                <path id="track-base" class="track-base"></path>
+                <path id="driver-a-track" class="driver-track driver-a-track"></path>
+                <path id="driver-b-track" class="driver-track driver-b-track"></path>
+                <path id="driver-a-progress" class="driver-progress driver-a-progress"></path>
+                <path id="driver-b-progress" class="driver-progress driver-b-progress"></path>
+                <g id="driver-a-marker" class="car-marker driver-a-marker"><circle class="marker-halo" r="19"></circle><circle class="marker-core" r="8"></circle><path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path></g>
+                <g id="driver-b-marker" class="car-marker driver-b-marker"><circle class="marker-halo" r="19"></circle><circle class="marker-core" r="8"></circle><path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path></g>
+              </g>
+            </svg>
+            <p class="map-error" id="map-error" role="status" hidden></p>
+            <div class="track-overlay" id="track-overlay" hidden>
+              <span class="overlay-icon" aria-hidden="true">!</span>
+              <p id="overlay-message">Elegí una sesión para cargar la comparación.</p>
+              <button class="retry-button" id="retry-button" type="button">REINTENTAR</button>
+            </div>
+            <div class="map-legend">
+              <span><i class="legend-line legend-a"></i><b id="legend-a">PILOTO A</b></span>
+              <span><i class="legend-line legend-b"></i><b id="legend-b">PILOTO B</b></span>
+            </div>
+            <span class="map-attribution-note">OPENSTREETMAP</span>
+          </div>
+          <div class="playback-controls">
+            <button class="play-button" id="play-button" type="button" aria-label="Reproducir vueltas" disabled>
+              <svg id="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"></path></svg>
+              <svg id="pause-icon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"></path></svg>
+            </button>
+            <span id="elapsed-time" class="elapsed-time">0:00.000</span>
+            <input id="lap-seek" class="seek-slider" type="range" min="0" max="100" step="0.1" value="0" aria-label="Posición de reproducción" disabled>
+            <span id="duration-label" class="total-time">--:--.---</span>
+            <select id="playback-speed" class="speed-select" aria-label="Velocidad de reproducción" disabled>
+              <option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option>
+            </select>
+          </div>
+        </article>
+
+        <article class="driver-panel panel driver-b-panel" aria-label="Datos del piloto B">
+          <header class="driver-heading">
+            <span class="driver-index">B</span>
+            <span class="driver-number" id="driver-b-number">--</span>
+          </header>
+          <div class="driver-identity">
+            <div class="driver-avatar" id="driver-b-avatar" aria-hidden="true">B</div>
+            <div>
+              <p class="driver-first-name" id="driver-b-first">PILOTO</p>
+              <h2 class="driver-name" id="driver-b-last">B</h2>
+            </div>
+          </div>
+          <div class="team-line">
+            <span class="team-swatch"></span>
+            <span id="driver-b-team">EQUIPO</span>
+            <span class="team-tag" id="driver-b-result">MEJOR VUELTA</span>
+          </div>
+          <div class="best-lap">
+            <div class="section-label"><span>BEST LAP</span><b id="driver-b-position">--</b></div>
+            <strong class="best-time" id="driver-b-time">--:--.---</strong>
+            <span class="lap-meta">VUELTA <b id="driver-b-lap">--</b><span id="driver-b-date">—</span></span>
+            <div class="sector-list" aria-label="Tiempos por sector del piloto B">
+              <div class="sector-chip"><span>S1</span><b id="driver-b-s1">--.---</b></div>
+              <div class="sector-chip"><span>S2</span><b id="driver-b-s2">--.---</b></div>
+              <div class="sector-chip"><span>S3</span><b id="driver-b-s3">--.---</b></div>
+            </div>
+          </div>
+          <div class="telemetry-block">
+            <div class="section-label"><span>LIVE TELEMETRY</span><b id="driver-b-telemetry-tag">B</b></div>
+            <div class="telemetry-grid">
+              <div class="telemetry-value"><span>VELOCIDAD</span><strong><b id="driver-b-speed">---</b><small> km/h</small></strong></div>
+              <div class="telemetry-value pedal-cell"><span>ACELERADOR</span><strong><b id="driver-b-throttle">--</b><small>%</small></strong><div class="meter"><i id="driver-b-throttle-bar"></i></div></div>
+              <div class="telemetry-value"><span>CAMBIO</span><strong><b id="driver-b-gear">-</b><small>ª</small></strong></div>
+              <div class="telemetry-value pedal-cell brake-cell"><span>FRENO</span><strong><b id="driver-b-brake">--</b><small>%</small></strong><div class="meter"><i id="driver-b-brake-bar"></i></div></div>
+              <div class="telemetry-value"><span>RPM</span><strong><b id="driver-b-rpm">----</b><small> rpm</small></strong></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="comparison-panel panel" aria-labelledby="comparison-title">
+        <div class="comparison-heading">
+          <div><p class="eyebrow">LIVE COMPARISON <span class="heading-index">/ 03</span></p><h2 id="comparison-title">Mismo circuito. <span>Dos vueltas.</span></h2></div>
+          <span class="comparison-caption" id="comparison-session-label">MEJOR VUELTA DE CADA PILOTO</span>
+        </div>
+        <div class="comparison-summary">
+          <div class="comparison-driver comparison-a">
+            <div class="comparison-driver-label"><i></i><span id="comparison-a-name">PILOTO A</span></div>
+            <strong id="comparison-a-time">--:--.---</strong>
+            <span class="comparison-lap">VUELTA <b id="comparison-a-lap">--</b></span>
+          </div>
+          <div class="comparison-gap" id="comparison-gap-panel">
+            <span>GAP AL MISMO PUNTO</span>
+            <strong id="comparison-gap">+--.---</strong>
+            <span id="comparison-leader">CARGANDO COMPARACIÓN</span>
+          </div>
+          <div class="comparison-driver comparison-b">
+            <div class="comparison-driver-label"><i></i><span id="comparison-b-name">PILOTO B</span></div>
+            <strong id="comparison-b-time">--:--.---</strong>
+            <span class="comparison-lap">VUELTA <b id="comparison-b-lap">--</b></span>
+          </div>
+        </div>
+        <div class="sector-comparison" role="table" aria-label="Comparación de tiempos por sector">
+          <div class="sector-row sector-heading" role="row"><span role="columnheader">SECTOR</span><span id="sector-a-heading" role="columnheader">PILOTO A</span><span id="sector-b-heading" role="columnheader">PILOTO B</span><span role="columnheader">DIFERENCIA</span></div>
+          <div class="sector-row" role="row" data-sector-index="0"><span role="rowheader">S1</span><span id="comparison-a-s1">--.---</span><span id="comparison-b-s1">--.---</span><span id="comparison-gap-s1">--.---</span></div>
+          <div class="sector-row" role="row" data-sector-index="1"><span role="rowheader">S2</span><span id="comparison-a-s2">--.---</span><span id="comparison-b-s2">--.---</span><span id="comparison-gap-s2">--.---</span></div>
+          <div class="sector-row" role="row" data-sector-index="2"><span role="rowheader">S3</span><span id="comparison-a-s3">--.---</span><span id="comparison-b-s3">--.---</span><span id="comparison-gap-s3">--.---</span></div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <p>TELEMETRÍA <a href="https://openf1.org" target="_blank" rel="noreferrer">OPENF1</a> · MAPA © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OPENSTREETMAP CONTRIBUTORS</a></p>
+        <p>VUELTAS RÁPIDAS DE LA SESIÓN SELECCIONADA</p>
+      </footer>
+    </main>
+  </body>
+</html>
