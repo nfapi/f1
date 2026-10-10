@@ -47,10 +47,10 @@
         </div>
       </section>
 
-      <section class="selector-panel panel" aria-label="Elegir meeting, sesión y pilotos">
+      <section class="selector-panel panel" aria-label="Elegir circuito, sesión y pilotos">
         <label class="select-field">
-          <span><i>01</i> MEETING</span>
-          <select id="meeting-select" disabled aria-label="Meeting de la temporada 2026">
+          <span><i>01</i> CIRCUITO</span>
+          <select id="meeting-select" disabled aria-label="Circuito de la temporada 2026">
             <option>Cargando meetings…</option>
           </select>
         </label>
@@ -122,7 +122,7 @@
           <header class="circuit-heading">
             <div>
               <p class="eyebrow">CIRCUIT VIEW <span class="heading-index">/ 02</span></p>
-              <h2 id="circuit-name">Elegí una sesión</h2>
+              <h2 id="circuit-name">Elegí un circuito</h2>
             </div>
             <label class="map-toggle">
               <input id="map-toggle" type="checkbox" checked>
@@ -152,20 +152,22 @@
                 <path id="driver-b-track" class="driver-track driver-b-track"></path>
                 <path id="driver-a-progress" class="driver-progress driver-a-progress"></path>
                 <path id="driver-b-progress" class="driver-progress driver-b-progress"></path>
+                <g id="microsector-layer" class="microsector-layer"></g>
                 <g id="driver-a-marker" class="car-marker driver-a-marker"><circle class="marker-halo" r="19"></circle><circle class="marker-core" r="8"></circle><path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path></g>
                 <g id="driver-b-marker" class="car-marker driver-b-marker"><circle class="marker-halo" r="19"></circle><circle class="marker-core" r="8"></circle><path class="marker-direction" d="M 7 -5 L 19 0 L 7 5 Z"></path></g>
               </g>
             </svg>
             <p class="map-error" id="map-error" role="status" hidden></p>
-            <div class="track-overlay" id="track-overlay" hidden>
+            <div class="track-overlay" id="track-overlay">
               <span class="overlay-icon" aria-hidden="true">!</span>
-              <p id="overlay-message">Elegí una sesión para cargar la comparación.</p>
-              <button class="retry-button" id="retry-button" type="button">REINTENTAR</button>
+              <p id="overlay-message">Elegí un circuito, una sesión y dos pilotos para empezar.</p>
+              <button class="retry-button" id="retry-button" type="button" hidden>REINTENTAR</button>
             </div>
             <div class="map-legend">
               <span><i class="legend-line legend-a"></i><b id="legend-a">PILOTO A</b></span>
               <span><i class="legend-line legend-b"></i><b id="legend-b">PILOTO B</b></span>
             </div>
+            <span class="microsector-legend">COLOR = MÁS RÁPIDO</span>
             <span class="map-attribution-note">OPENSTREETMAP</span>
           </div>
           <div class="playback-controls">

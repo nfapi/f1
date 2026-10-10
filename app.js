@@ -2,11 +2,10 @@
 
 const API_ROOT = "https://api.openf1.org/v1";
 const SEASON = 2026;
+const MICROSECTOR_COUNT = 100;
 const REQUEST_TIMEOUT_MS = 15000;
 const REQUEST_INTERVAL_MS = 400;
 const MAX_RATE_LIMIT_RETRIES = 2;
-const DEFAULT_MEETING_NAME = "Austrian Grand Prix";
-const DEFAULT_DRIVERS = ["ANT", "HAM"];
 const MAP_CACHE = new Map();
 let requestQueue = Promise.resolve();
 let nextRequestAt = 0;
@@ -28,6 +27,7 @@ const elements = {
   trackLayers: document.querySelector("#track-layers"),
   trackShadow: document.querySelector("#track-shadow"),
   trackBase: document.querySelector("#track-base"),
+  microsectorLayer: document.querySelector("#microsector-layer"),
   trackOverlay: document.querySelector("#track-overlay"),
   overlayMessage: document.querySelector("#overlay-message"),
   retryButton: document.querySelector("#retry-button"),
@@ -67,6 +67,7 @@ const state = {
   lapStartB: 0,
   duration: 0,
   position: 0,
+  microsectors: [],
   speed: 4,
   playing: false,
   loadId: 0,
@@ -152,12 +153,14 @@ function showError(error) {
   state.playing = false;
   elements.overlayMessage.textContent = error.message || "Ocurrió un error al cargar estos datos.";
   elements.trackOverlay.hidden = false;
+  elements.retryButton.hidden = false;
   setBusy(false);
   setStatus("ERROR AL CARGAR", "error");
 }
 
 function clearError() {
   elements.trackOverlay.hidden = true;
+  elements.retryButton.hidden = true;
 }
 
 function setTrackLayersVisible(visible) {
@@ -213,8 +216,13 @@ function setDriverColor(side, driver) {
   root.style.setProperty(`--driver-${side}-wash`, `${base}22`);
 }
 
-function populateSelect(select, records, label, getValue, getLabel) {
+function populateSelect(select, records, placeholder, getValue, getLabel, emptyLabel = placeholder) {
   select.replaceChildren();
+  const firstOption = document.createElement("option");
+  firstOption.value = "";
+  firstOption.textContent = records.length ? placeholder : emptyLabel;
+  firstOption.selected = true;
+  select.append(firstOption);
   records.forEach((record, index) => {
     const option = document.createElement("option");
     option.value = getValue(record);
@@ -222,11 +230,6 @@ function populateSelect(select, records, label, getValue, getLabel) {
     select.append(option);
   });
   select.disabled = records.length === 0;
-  if (records.length === 0) {
-    const option = document.createElement("option");
-    option.textContent = label;
-    select.append(option);
-  }
 }
 
 function meetingLabel(meeting, index) {
@@ -257,6 +260,7 @@ function circuitDisplayName(meeting) {
 
 async function loadMeetings() {
   setStatus("CARGANDO TEMPORADA", "loading");
+  elements.meeting.disabled = true;
   const meetings = await fetchRecords("meetings", { year: SEASON });
   state.meetings = meetings
     .filter((meeting) => meeting.meeting_key && meeting.meeting_name)
@@ -268,22 +272,95 @@ async function loadMeetings() {
   populateSelect(
     elements.meeting,
     state.meetings,
-    "No hay meetings para 2026",
+    "Elegí un circuito",
     (meeting) => String(meeting.meeting_key),
     meetingLabel,
+    `No hay circuitos para ${SEASON}`,
   );
-  const defaultMeeting = state.meetings.find((meeting) => meeting.meeting_name === DEFAULT_MEETING_NAME)
-    || state.meetings[0];
-  elements.meeting.value = String(defaultMeeting.meeting_key);
-  await loadSessions(defaultMeeting.meeting_key, true);
+  populateSelect(elements.session, [], "Elegí un circuito primero", (session) => String(session.session_key), sessionLabel);
+  populateSelect(elements.driverA, [], "Esperando sesión", (driver) => String(driver.driver_number), driverLabel);
+  populateSelect(elements.driverB, [], "Esperando sesión", (driver) => String(driver.driver_number), driverLabel);
+  setStatus("ELEGÍ UN CIRCUITO");
 }
 
-async function loadSessions(meetingKey, useExampleDefaults = false) {
-  setBusy(true, "CARGANDO SESIONES");
-  elements.session.disabled = true;
-  elements.driverA.disabled = true;
-  elements.driverB.disabled = true;
+function clearComparisonView(message = "Elegí un circuito, una sesión y dos pilotos para empezar.") {
+  state.loadId += 1;
+  state.playing = false;
+  state.lapA = null;
+  state.lapB = null;
+  state.driverA = null;
+  state.driverB = null;
+  state.pointsA = [];
+  state.pointsB = [];
+  state.microsectors = [];
+  state.carDataA = [];
+  state.carDataB = [];
+  state.duration = 0;
+  state.position = 0;
+  animate.previousTimestamp = 0;
+  setPlaying(false);
+  setTrackLayersVisible(false);
+  elements.trackOverlay.hidden = false;
+  elements.overlayMessage.textContent = message;
+  elements.retryButton.hidden = true;
+  elements.elapsed.textContent = "--:--.---";
+  elements.duration.textContent = "--:--.---";
+  elements.seek.value = "0";
+  elements.gap.textContent = "+--.---";
+  elements.leader.textContent = "ESPERANDO SELECCIÓN";
+  elements.gapPanel.classList.remove("driver-a-leading", "driver-b-leading");
+  elements.mapError.hidden = true;
+  document.querySelector("#circuit-name").textContent = state.meeting
+    ? `${circuitDisplayName(state.meeting)} · ${state.meeting.location}`
+    : "Elegí un circuito";
+  document.querySelector("#track-watermark").textContent = state.meeting
+    ? state.meeting.circuit_short_name.toUpperCase()
+    : "F1";
+  document.querySelectorAll(".driver-panel").forEach((panel, index) => {
+    const side = index === 0 ? "a" : "b";
+    const values = {
+      number: "--", avatar: side.toUpperCase(), first: "PILOTO", last: side.toUpperCase(),
+      team: "EQUIPO", result: "MEJOR VUELTA", position: "--", time: "--:--.---",
+      lap: "--", date: "—", s1: "--.---", s2: "--.---", s3: "--.---",
+      "telemetry-tag": side.toUpperCase(), speed: "---", throttle: "--",
+      gear: "-", brake: "--", rpm: "----",
+    };
+    for (const [name, value] of Object.entries(values)) {
+      document.querySelector(`#driver-${side}-${name}`).textContent = value;
+    }
+    document.querySelector(`#driver-${side}-throttle-bar`).style.width = "0%";
+    document.querySelector(`#driver-${side}-brake-bar`).style.width = "0%";
+  });
+  document.querySelector("#comparison-a-name").textContent = "PILOTO A";
+  document.querySelector("#comparison-b-name").textContent = "PILOTO B";
+  document.querySelector("#comparison-a-time").textContent = "--:--.---";
+  document.querySelector("#comparison-b-time").textContent = "--:--.---";
+  document.querySelector("#comparison-a-lap").textContent = "--";
+  document.querySelector("#comparison-b-lap").textContent = "--";
+  document.querySelector("#sector-a-heading").textContent = "PILOTO A";
+  document.querySelector("#sector-b-heading").textContent = "PILOTO B";
+  document.querySelector("#comparison-session-label").textContent = "MEJOR VUELTA DE CADA PILOTO";
+  document.querySelector("#legend-a").textContent = "PILOTO A";
+  document.querySelector("#legend-b").textContent = "PILOTO B";
+  document.querySelectorAll("[data-sector-index]").forEach((row) => {
+    row.children[1].textContent = "--.---";
+    row.children[2].textContent = "--.---";
+    row.children[3].textContent = "--.---";
+    row.classList.remove("driver-a-faster", "driver-b-faster");
+  });
+  setBusy(false);
+}
+
+async function loadSessions(meetingKey) {
   state.meeting = state.meetings.find((meeting) => meeting.meeting_key === Number(meetingKey));
+  clearComparisonView("Cargando las sesiones del circuito…");
+  setBusy(true, "CARGANDO SESIONES");
+  state.session = null;
+  state.sessions = [];
+  state.drivers = [];
+  populateSelect(elements.session, [], "Elegí un circuito primero", (session) => String(session.session_key), sessionLabel);
+  populateSelect(elements.driverA, [], "Esperando sesión", (driver) => String(driver.driver_number), driverLabel);
+  populateSelect(elements.driverB, [], "Esperando sesión", (driver) => String(driver.driver_number), driverLabel);
   const sessions = await fetchRecords("sessions", { meeting_key: meetingKey });
   if (String(meetingKey) !== elements.meeting.value) return;
   state.sessions = sessions.sort((first, second) => Date.parse(first.date_start) - Date.parse(second.date_start));
@@ -294,23 +371,22 @@ async function loadSessions(meetingKey, useExampleDefaults = false) {
   populateSelect(
     elements.session,
     state.sessions,
-    "No hay sesiones",
+    "Elegí una sesión",
     (session) => String(session.session_key),
     sessionLabel,
+    "No hay sesiones para este circuito",
   );
-  const preferred = useExampleDefaults
-    ? state.sessions.find((session) => session.session_name === "Practice 1")
-    : null;
-  const session = preferred || state.sessions[0];
-  elements.session.value = String(session.session_key);
-  await loadSession(session.session_key, useExampleDefaults);
+  elements.overlayMessage.textContent = "Elegí una sesión para continuar.";
+  setStatus("ELEGÍ UNA SESIÓN");
 }
 
-async function loadSession(sessionKey, useExampleDefaults = false) {
+async function loadSession(sessionKey) {
+  clearComparisonView("Cargando los pilotos de la sesión…");
   setBusy(true, "CARGANDO PILOTOS");
-  elements.driverA.disabled = true;
-  elements.driverB.disabled = true;
   state.session = state.sessions.find((session) => session.session_key === Number(sessionKey));
+  state.drivers = [];
+  populateSelect(elements.driverA, [], "Cargando pilotos…", (driver) => String(driver.driver_number), driverLabel);
+  populateSelect(elements.driverB, [], "Cargando pilotos…", (driver) => String(driver.driver_number), driverLabel);
   const drivers = await fetchRecords("drivers", { session_key: sessionKey });
   if (String(sessionKey) !== elements.session.value) return;
   state.drivers = drivers.filter((driver) => Number.isFinite(driver.driver_number))
@@ -319,17 +395,10 @@ async function loadSession(sessionKey, useExampleDefaults = false) {
     throw new Error("No hay dos pilotos disponibles en esta sesión.");
   }
 
-  populateSelect(elements.driverA, state.drivers, "No hay pilotos", (driver) => String(driver.driver_number), driverLabel);
-  populateSelect(elements.driverB, state.drivers, "No hay pilotos", (driver) => String(driver.driver_number), driverLabel);
-
-  const defaults = useExampleDefaults
-    ? DEFAULT_DRIVERS.map((acronym) => state.drivers.find((driver) => driver.name_acronym === acronym))
-    : [];
-  const driverA = defaults[0] || state.drivers[0];
-  const driverB = defaults[1] || state.drivers.find((driver) => driver.driver_number !== driverA.driver_number);
-  elements.driverA.value = String(driverA.driver_number);
-  elements.driverB.value = String(driverB.driver_number);
-  await loadComparison();
+  populateSelect(elements.driverA, state.drivers, "Elegí piloto A", (driver) => String(driver.driver_number), driverLabel, "No hay pilotos");
+  populateSelect(elements.driverB, state.drivers, "Elegí piloto B", (driver) => String(driver.driver_number), driverLabel, "No hay pilotos");
+  elements.overlayMessage.textContent = "Elegí dos pilotos para comparar sus mejores vueltas.";
+  setStatus("ELEGÍ DOS PILOTOS");
 }
 
 function selectedDrivers() {
@@ -340,9 +409,14 @@ function selectedDrivers() {
 }
 
 async function loadComparison() {
-  const loadId = ++state.loadId;
   const [driverA, driverB] = selectedDrivers();
-  if (!state.session || !driverA || !driverB) {
+  if (!state.session || !elements.driverA.value || !elements.driverB.value || !driverA || !driverB) {
+    clearComparisonView(
+      state.session
+        ? "Elegí dos pilotos para comparar sus mejores vueltas."
+        : "Elegí un circuito, una sesión y dos pilotos para empezar.",
+    );
+    setStatus(state.session ? "ELEGÍ DOS PILOTOS" : "ELEGÍ UNA SESIÓN");
     return;
   }
   if (driverA.driver_number === driverB.driver_number) {
@@ -350,6 +424,8 @@ async function loadComparison() {
     return;
   }
 
+  clearComparisonView("Cargando las mejores vueltas…");
+  const loadId = state.loadId;
   clearError();
   setBusy(true, "CARGANDO VUELTAS");
   state.playing = false;
@@ -484,6 +560,61 @@ function pointsToPath(points) {
   return points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ");
 }
 
+function pointAtDistanceFraction(points, fraction) {
+  const target = fraction * points[points.length - 1].distance;
+  let low = 0;
+  let high = points.length - 1;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (points[middle].distance < target) low = middle + 1;
+    else high = middle;
+  }
+
+  const nextIndex = low;
+  const previous = points[Math.max(0, nextIndex - 1)];
+  const next = points[nextIndex];
+  const span = next.distance - previous.distance;
+  const fractionOnSegment = span === 0 ? 0 : (target - previous.distance) / span;
+  return {
+    x: previous.x + (next.x - previous.x) * fractionOnSegment,
+    y: previous.y + (next.y - previous.y) * fractionOnSegment,
+    distance: target,
+  };
+}
+
+function pointsBetweenDistanceFractions(points, startFraction, endFraction) {
+  const startDistance = startFraction * points[points.length - 1].distance;
+  const endDistance = endFraction * points[points.length - 1].distance;
+  const segmentPoints = [
+    pointAtDistanceFraction(points, startFraction),
+    ...points.filter((point) => point.distance > startDistance && point.distance < endDistance),
+    pointAtDistanceFraction(points, endFraction),
+  ];
+  return pointsToPath(segmentPoints);
+}
+
+function drawMicrosectors() {
+  elements.microsectorLayer.replaceChildren();
+  state.microsectors = [];
+  for (let index = 0; index < MICROSECTOR_COUNT; index += 1) {
+    const startFraction = index / MICROSECTOR_COUNT;
+    const endFraction = (index + 1) / MICROSECTOR_COUNT;
+    const durationA = elapsedAtDistance(state.pointsA, state.lapA, endFraction)
+      - elapsedAtDistance(state.pointsA, state.lapA, startFraction);
+    const durationB = elapsedAtDistance(state.pointsB, state.lapB, endFraction)
+      - elapsedAtDistance(state.pointsB, state.lapB, startFraction);
+    const winner = Math.abs(durationA - durationB) < 0.0005
+      ? "tie"
+      : durationA < durationB ? "a" : "b";
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", `microsector microsector-${winner}`);
+    path.setAttribute("d", pointsBetweenDistanceFractions(state.pointsA, startFraction, endFraction));
+    path.setAttribute("aria-hidden", "true");
+    elements.microsectorLayer.append(path);
+    state.microsectors.push({ path, endFraction });
+  }
+}
+
 function drawTrack() {
   const pathA = pointsToPath(state.pointsA);
   const pathB = pointsToPath(state.pointsB);
@@ -491,6 +622,7 @@ function drawTrack() {
   elements.trackShadow.setAttribute("d", pathA);
   document.querySelector("#driver-a-track").setAttribute("d", pathA);
   document.querySelector("#driver-b-track").setAttribute("d", pathB);
+  drawMicrosectors();
   document.querySelector("#driver-a-progress").setAttribute("d", pointsToPath(state.pointsA.slice(0, 1)));
   document.querySelector("#driver-b-progress").setAttribute("d", pointsToPath(state.pointsB.slice(0, 1)));
   setTrackLayersVisible(true);
@@ -595,12 +727,24 @@ function renderProgress(progress) {
   const elapsedB = Math.min(state.position, state.lapB.lap_duration);
   const positionA = positionAtElapsed(state.pointsA, state.lapA, elapsedA);
   const positionB = positionAtElapsed(state.pointsB, state.lapB, elapsedB);
-  const prefixA = state.pointsA.slice(0, positionA.index + 1);
-  const prefixB = state.pointsB.slice(0, positionB.index + 1);
-  prefixA.push(positionA.point);
-  prefixB.push(positionB.point);
-  document.querySelector("#driver-a-progress").setAttribute("d", pointsToPath(prefixA));
-  document.querySelector("#driver-b-progress").setAttribute("d", pointsToPath(prefixB));
+  const completedDistance = Math.min(positionA.distanceFraction, positionB.distanceFraction);
+  state.microsectors.forEach((microsector) => {
+    microsector.path.setAttribute(
+      "visibility",
+      microsector.endFraction <= completedDistance ? "visible" : "hidden",
+    );
+  });
+  if (state.position >= state.duration) {
+    document.querySelector("#driver-a-progress").removeAttribute("d");
+    document.querySelector("#driver-b-progress").removeAttribute("d");
+  } else {
+    const prefixA = state.pointsA.slice(0, positionA.index + 1);
+    const prefixB = state.pointsB.slice(0, positionB.index + 1);
+    prefixA.push(positionA.point);
+    prefixB.push(positionB.point);
+    document.querySelector("#driver-a-progress").setAttribute("d", pointsToPath(prefixA));
+    document.querySelector("#driver-b-progress").setAttribute("d", pointsToPath(prefixB));
+  }
   positionMarker(elements.driverAMarker, positionA);
   positionMarker(elements.driverBMarker, positionB);
 
@@ -827,7 +971,21 @@ elements.speed.addEventListener("change", () => {
 });
 
 elements.mapToggle.addEventListener("change", () => setMapVisible(elements.mapToggle.checked));
-elements.retryButton.addEventListener("click", loadComparison);
+elements.retryButton.addEventListener("click", async () => {
+  try {
+    if (elements.driverA.value && elements.driverB.value) {
+      await loadComparison();
+    } else if (state.session) {
+      await loadSession(state.session.session_key);
+    } else if (state.meeting) {
+      await loadSessions(state.meeting.meeting_key);
+    } else {
+      await loadMeetings();
+    }
+  } catch (error) {
+    showError(error);
+  }
+});
 window.addEventListener("resize", () => {
   if (state.map) window.setTimeout(() => state.map.invalidateSize(), 100);
 });

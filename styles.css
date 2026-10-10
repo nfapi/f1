@@ -440,9 +440,13 @@ h1 span { color: var(--accent); }
 .track-shadow, .track-base, .driver-progress { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .track-shadow { stroke: #050709; stroke-width: 19px; }
 .track-base { stroke: #4a555e; stroke-width: 10px; }
+.microsector { fill: none; stroke-width: 8px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.microsector-a { stroke: var(--driver-a-bright); }
+.microsector-b { stroke: var(--driver-b-bright); }
+.microsector-tie { stroke: #c6cdd3; }
 .driver-track { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.driver-a-track { stroke: var(--driver-a-bright); stroke-dasharray: 2 7; stroke-width: 3px; opacity: 0.7; }
-.driver-b-track { stroke: var(--driver-b-bright); stroke-dasharray: 7 7; stroke-width: 3px; opacity: 0.8; }
+.driver-a-track { stroke: var(--driver-a-bright); stroke-dasharray: 2 7; stroke-width: 2px; opacity: 0.24; }
+.driver-b-track { stroke: var(--driver-b-bright); stroke-dasharray: 7 7; stroke-width: 2px; opacity: 0.24; }
 .driver-a-progress { stroke: var(--driver-a-bright); stroke-width: 5px; filter: drop-shadow(0 0 5px var(--driver-a)); }
 .driver-b-progress { stroke: var(--driver-b-bright); stroke-width: 5px; filter: drop-shadow(0 0 5px var(--driver-b)); }
 .car-marker { filter: url("#marker-glow"); }
@@ -468,6 +472,17 @@ h1 span { color: var(--accent); }
 }
 
 .map-legend span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px; background: rgb(7 10 12 / 66%); }
+.microsector-legend {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #d8dfe4;
+  font-size: 6px;
+  letter-spacing: 0.35px;
+  white-space: nowrap;
+}
 .legend-line { width: 16px; height: 2px; border-radius: 2px; background: var(--driver-a-bright); }
 .legend-b { height: 0; border-top: 2px dashed var(--driver-b-bright); background: transparent; }
 .map-attribution-note { position: absolute; top: 9px; left: 10px; z-index: 2; color: rgb(255 255 255 / 54%); font-family: var(--mono); font-size: 6px; letter-spacing: 0.6px; pointer-events: none; }
@@ -609,6 +624,9 @@ h1 span { color: var(--accent); }
   .circuit-heading { min-height: 59px; padding: 10px 12px; }
   .circuit-heading h2 { max-width: 235px; font-size: 11px; }
   .track-stage { min-height: 310px; }
+  .map-legend { right: 6px; left: 6px; font-size: 6px; }
+  .map-legend span { gap: 4px; padding-inline: 4px; }
+  .microsector-legend { font-size: 5px; }
   .playback-controls { grid-template-columns: 29px 42px minmax(20px, 1fr) 47px 41px; gap: 5px; padding-inline: 8px; }
   .elapsed-time, .total-time { font-size: 6px; }
   .play-button { width: 28px; height: 28px; }
