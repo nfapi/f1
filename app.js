@@ -160,6 +160,14 @@ function clearError() {
   elements.trackOverlay.hidden = true;
 }
 
+function setTrackLayersVisible(visible) {
+  if (visible) {
+    elements.trackLayers.removeAttribute("hidden");
+  } else {
+    elements.trackLayers.setAttribute("hidden", "");
+  }
+}
+
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) {
     return "--:--.---";
@@ -347,7 +355,7 @@ async function loadComparison() {
   state.playing = false;
   elements.playIcon.hidden = false;
   elements.pauseIcon.hidden = true;
-  elements.trackLayers.hidden = true;
+  setTrackLayersVisible(false);
   state.driverA = driverA;
   state.driverB = driverB;
 
@@ -407,7 +415,7 @@ async function loadComparison() {
       }
     });
     renderProgress(0);
-    elements.trackLayers.hidden = false;
+    setTrackLayersVisible(true);
     elements.duration.textContent = formatTime(state.duration);
     setBusy(false, "DATOS VERIFICADOS");
   } catch (error) {
@@ -485,7 +493,7 @@ function drawTrack() {
   document.querySelector("#driver-b-track").setAttribute("d", pathB);
   document.querySelector("#driver-a-progress").setAttribute("d", pointsToPath(state.pointsA.slice(0, 1)));
   document.querySelector("#driver-b-progress").setAttribute("d", pointsToPath(state.pointsB.slice(0, 1)));
-  elements.trackLayers.hidden = false;
+  setTrackLayersVisible(true);
 }
 
 function positionAtElapsed(points, lap, elapsed) {
@@ -716,8 +724,12 @@ async function updateMap(loadId) {
 }
 
 async function findMapBounds(meeting) {
-  const circuitQuery = `${circuitDisplayName(meeting)} circuit, ${meeting.location}, ${meeting.country_name}`;
-  for (const query of [circuitQuery, `${meeting.location}, ${meeting.country_name}`]) {
+  const circuitName = circuitDisplayName(meeting);
+  const queries = [
+    `${circuitName}, ${meeting.location}, ${meeting.country_name}`,
+    `${circuitName}, ${meeting.country_name}`,
+  ];
+  for (const query of queries) {
     const url = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
       q: query,
       format: "jsonv2",
