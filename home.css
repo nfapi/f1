@@ -208,7 +208,7 @@ h2 {
 
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -289,6 +289,18 @@ h2 {
 .replay-track-three { top: 70%; transform: rotate(-5deg); }
 .replay-marker { position: absolute; top: 49%; left: 63%; width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px var(--mint); }
 .replay-caption { position: absolute; right: 10px; bottom: 8px; color: var(--muted); font: 8px var(--mono); }
+
+.strategy-graphic, .weather-graphic, .pace-graphic { display: flex; align-items: center; justify-content: center; }
+.strategy-bar { position: absolute; left: 15%; height: 12px; border-radius: 2px; }
+.soft-bar { top: 28%; width: 28%; background: #ef5967; }
+.medium-bar { top: 48%; left: 43%; width: 38%; background: #f3bd45; }
+.hard-bar { top: 68%; left: 30%; width: 48%; background: #d5d8d4; }
+.strategy-stop { position: absolute; left: 43%; top: 25%; width: 2px; height: 60%; background: var(--mint); }
+.weather-line-art { width: 70%; height: 56%; border-top: 2px solid #66d9c7; border-radius: 50% 30% 0 0; transform: skewY(-12deg); box-shadow: 0 -12px 0 -10px #f3bd45; }
+.weather-sun { position: absolute; top: 19%; right: 19%; color: #f3bd45; font-size: 20px; }
+.pace-line-art { position: absolute; left: 13%; right: 12%; height: 2px; border-radius: 50%; transform: rotate(-9deg); }
+.pace-line-a { top: 46%; background: #66d9c7; }
+.pace-line-b { top: 60%; background: #f3bd45; transform: rotate(4deg); }
 
 .card-copy { margin: 0 0 20px; }
 .card-copy h3 { margin: 0 0 7px; font-size: 18px; font-weight: 500; letter-spacing: -.035em; }

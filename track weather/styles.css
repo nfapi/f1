@@ -1,0 +1,10 @@
+.metric-picker { display: flex; align-items: center; gap: 9px; color: var(--muted); font: 8px var(--mono); letter-spacing: .1em; }
+.metric-picker .inline-select { width: auto; min-width: 184px; height: 32px; padding-right: 8px; font-size: 9px; }
+.weather-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.chart-box svg { height: 380px; }
+.weather-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.weather-area { fill: rgb(102 217 199 / 10%); }
+.weather-point { fill: var(--accent); stroke: #080a0c; stroke-width: 2; }
+.rain-stem { stroke: #f3bd45; stroke-width: 3; }
+.data-note { margin: 12px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+@media (max-width: 700px) { .metric-picker { align-items: start; flex-direction: column; } .metric-picker .inline-select { min-width: 165px; } .weather-metrics { grid-template-columns: 1fr; } .chart-box svg { height: 320px; } }

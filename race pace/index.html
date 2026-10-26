@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0e">
+    <meta name="description" content="Compará ritmo de carrera, vueltas rápidas y consistencia de los pilotos de Fórmula 1.">
+    <title>Ritmo y consistencia · F1 Metrics Lab</title>
+    <link rel="stylesheet" href="../shared/tools.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="../shared/f1-tools.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="../" aria-label="Volver a F1 Metrics Lab"><span class="wordmark-mark">F1</span><span class="wordmark-copy">METRICS <span>LAB</span></span></a>
+        <div class="topbar-context"><span class="live-dot"></span><span>RACE PACE</span></div>
+        <a class="api-link" href="https://openf1.org/docs/" target="_blank" rel="noreferrer">DATOS OPENF1 ↗</a>
+      </header>
+      <section class="intro">
+        <div><p class="eyebrow"><span>07</span> / LAP TIME ANALYSIS</p><h1>El ritmo,<br><span>sin perder detalle.</span></h1><p class="intro-copy">Compará el ritmo vuelta a vuelta, el promedio de vueltas limpias y la consistencia de los pilotos.</p></div>
+        <span class="tool-index">PACE / CONSISTENCY</span>
+      </section>
+      <section class="controls panel" aria-label="Seleccionar carrera">
+        <label class="select-field" for="season-select"><span>TEMPORADA</span><select id="season-select"><option>2026</option><option>2025</option><option>2024</option><option>2023</option></select></label>
+        <label class="select-field race-field" for="race-select"><span>CARRERA</span><select id="race-select" disabled><option>Cargando carreras…</option></select></label>
+        <div class="data-status" role="status"><i class="status-dot"></i><span id="status-label" data-state="loading">CARGANDO CARRERAS</span></div>
+      </section>
+      <section class="content-panel panel">
+        <header class="panel-heading"><div><p class="eyebrow">RACE PACE <span>/ 01</span></p><h2 id="race-title">Comparación de ritmo</h2></div><span class="heading-note">VUELTAS LIMPIAS · EXCLUYE PIT OUT</span></header>
+        <div class="empty-state" id="empty-state" role="status"><span class="empty-mark">↗</span><p>Elegí una carrera para comparar ritmo y consistencia.</p></div>
+        <div class="data-view" id="data-view" hidden>
+          <div class="driver-pickers">
+            <label class="select-field" for="driver-a"><span>PILOTO A</span><select class="inline-select" id="driver-a" disabled></select></label>
+            <span class="versus">VS</span>
+            <label class="select-field" for="driver-b"><span>PILOTO B</span><select class="inline-select" id="driver-b" disabled></select></label>
+          </div>
+          <div class="metric-grid pace-metrics">
+            <article class="metric-card"><span class="metric-label">VUELTA MÁS RÁPIDA</span><strong class="metric-value" id="metric-best">—</strong><span class="metric-detail" id="metric-best-detail">seleccioná un piloto</span></article>
+            <article class="metric-card"><span class="metric-label">PROMEDIO DE VUELTAS LIMPIAS</span><strong class="metric-value" id="metric-average">—</strong><span class="metric-detail" id="metric-average-detail">—</span></article>
+            <article class="metric-card"><span class="metric-label">CONSISTENCIA · DESVÍO ESTÁNDAR</span><strong class="metric-value" id="metric-consistency">—</strong><span class="metric-detail" id="metric-consistency-detail">menor es más consistente</span></article>
+          </div>
+          <div class="chart-box"><svg id="pace-chart" role="img" aria-label="Ritmo comparado por vuelta"></svg></div>
+          <div class="pace-table-wrap"><table><thead><tr><th>POS</th><th>PILOTO</th><th>VUELTA RÁPIDA</th><th>PROMEDIO</th><th>CONSISTENCIA</th><th>VUELTAS</th></tr></thead><tbody id="pace-table"></tbody></table></div>
+          <p class="data-note">Se excluyen las vueltas de salida de boxes (pit out), los datos inválidos y vueltas de más de 180 s. El promedio no ajusta tráfico, combustible ni compuesto.</p>
+        </div>
+      </section>
+      <footer class="page-footer"><p>TIEMPOS DE VUELTA · DATOS <a href="https://openf1.org" target="_blank" rel="noreferrer">OPENF1</a></p><p><a href="../">TODAS LAS HERRAMIENTAS ↗</a></p></footer>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0e">
+    <meta name="description" content="Explorá los stints, compuestos y paradas en boxes de cada piloto de Fórmula 1.">
+    <title>Estrategia de neumáticos · F1 Metrics Lab</title>
+    <link rel="stylesheet" href="../shared/tools.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="../shared/f1-tools.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="../" aria-label="Volver a F1 Metrics Lab"><span class="wordmark-mark">F1</span><span class="wordmark-copy">METRICS <span>LAB</span></span></a>
+        <div class="topbar-context"><span class="live-dot"></span><span>TYRE STRATEGY</span></div>
+        <a class="api-link" href="https://openf1.org/docs/" target="_blank" rel="noreferrer">DATOS OPENF1 ↗</a>
+      </header>
+      <section class="intro">
+        <div><p class="eyebrow"><span>05</span> / STINTS & PIT STOPS</p><h1>La estrategia,<br><span>vuelta a vuelta.</span></h1><p class="intro-copy">Compará los compuestos y la duración de cada stint. Cada bloque representa un juego de neumáticos; los datos de boxes provienen de OpenF1.</p></div>
+        <span class="tool-index">STRATEGY / TYRES</span>
+      </section>
+      <section class="controls panel" aria-label="Seleccionar carrera">
+        <label class="select-field" for="season-select"><span>TEMPORADA</span><select id="season-select"><option>2026</option><option>2025</option><option>2024</option><option>2023</option></select></label>
+        <label class="select-field race-field" for="race-select"><span>CARRERA</span><select id="race-select" disabled><option>Cargando carreras…</option></select></label>
+        <div class="data-status" role="status"><i class="status-dot"></i><span id="status-label" data-state="loading">CARGANDO CARRERAS</span></div>
+      </section>
+      <section class="content-panel panel">
+        <header class="panel-heading"><div><p class="eyebrow">RACE STRATEGY <span>/ 01</span></p><h2 id="race-title">Stints por piloto</h2></div><p class="heading-note">HOVER PARA VER EL STINT</p></header>
+        <div class="empty-state" id="empty-state" role="status"><span class="empty-mark">↗</span><p>Elegí una carrera para explorar sus estrategias de neumáticos.</p></div>
+        <div class="data-view" id="data-view" hidden>
+          <div class="metric-grid">
+            <article class="metric-card"><span class="metric-label">PILOTOS</span><strong class="metric-value" id="metric-drivers">—</strong><span class="metric-detail">con stint registrado</span></article>
+            <article class="metric-card"><span class="metric-label">PARADAS EN BOXES</span><strong class="metric-value" id="metric-stops">—</strong><span class="metric-detail">registros OpenF1</span></article>
+            <article class="metric-card"><span class="metric-label">COMPUESTOS</span><strong class="metric-value" id="metric-compounds">—</strong><span class="metric-detail" id="metric-compound-detail">en carrera</span></article>
+          </div>
+          <div class="strategy-legend" id="strategy-legend" aria-label="Leyenda de compuestos"></div>
+          <div class="strategy-scroll"><div id="strategy-chart"></div></div>
+          <p class="data-note">Los rangos se muestran según los stints publicados por OpenF1; pueden diferir de las estrategias oficiales ante datos incompletos.</p>
+        </div>
+      </section>
+      <footer class="page-footer"><p>STINTS Y PARADAS · DATOS <a href="https://openf1.org" target="_blank" rel="noreferrer">OPENF1</a></p><p><a href="../">TODAS LAS HERRAMIENTAS ↗</a></p></footer>
+    </main>
+  </body>
+</html>

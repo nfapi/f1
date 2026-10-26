@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0e">
+    <meta name="description" content="Explorá las condiciones meteorológicas durante carreras de Fórmula 1.">
+    <title>Clima de carrera · F1 Metrics Lab</title>
+    <link rel="stylesheet" href="../shared/tools.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="../shared/f1-tools.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="../" aria-label="Volver a F1 Metrics Lab"><span class="wordmark-mark">F1</span><span class="wordmark-copy">METRICS <span>LAB</span></span></a>
+        <div class="topbar-context"><span class="live-dot"></span><span>TRACK WEATHER</span></div>
+        <a class="api-link" href="https://openf1.org/docs/" target="_blank" rel="noreferrer">DATOS OPENF1 ↗</a>
+      </header>
+      <section class="intro">
+        <div><p class="eyebrow"><span>06</span> / WEATHER CONDITIONS</p><h1>El clima,<br><span>en carrera.</span></h1><p class="intro-copy">Seguí cómo evolucionaron la pista y el ambiente durante la carrera. Las mediciones de OpenF1 se toman a intervalos regulares.</p></div>
+        <span class="tool-index">WEATHER / TRACK</span>
+      </section>
+      <section class="controls panel" aria-label="Seleccionar carrera">
+        <label class="select-field" for="season-select"><span>TEMPORADA</span><select id="season-select"><option>2026</option><option>2025</option><option>2024</option><option>2023</option></select></label>
+        <label class="select-field race-field" for="race-select"><span>CARRERA</span><select id="race-select" disabled><option>Cargando carreras…</option></select></label>
+        <div class="data-status" role="status"><i class="status-dot"></i><span id="status-label" data-state="loading">CARGANDO CARRERAS</span></div>
+      </section>
+      <section class="content-panel panel">
+        <header class="panel-heading"><div><p class="eyebrow">CONDITIONS <span>/ 01</span></p><h2 id="race-title">Clima durante la carrera</h2></div><label class="metric-picker" for="weather-metric">MOSTRAR
+          <select class="inline-select" id="weather-metric"><option value="track_temperature">Temperatura de pista</option><option value="air_temperature">Temperatura ambiente</option><option value="rainfall">Lluvia</option><option value="wind_speed">Velocidad del viento</option><option value="humidity">Humedad</option></select>
+        </label></header>
+        <div class="empty-state" id="empty-state" role="status"><span class="empty-mark">↗</span><p>Elegí una carrera para ver las condiciones meteorológicas.</p></div>
+        <div class="data-view" id="data-view" hidden>
+          <div class="metric-grid weather-metrics">
+            <article class="metric-card"><span class="metric-label">TEMP. AMBIENTE PROMEDIO</span><strong class="metric-value" id="metric-air">—</strong><span class="metric-detail">durante la sesión</span></article>
+            <article class="metric-card"><span class="metric-label">TEMP. DE PISTA PROMEDIO</span><strong class="metric-value" id="metric-track">—</strong><span class="metric-detail">durante la sesión</span></article>
+            <article class="metric-card"><span class="metric-label">LLUVIA REGISTRADA</span><strong class="metric-value" id="metric-rain">—</strong><span class="metric-detail" id="metric-wind">viento promedio —</span></article>
+          </div>
+          <div class="chart-box" aria-label="Gráfico de clima por hora"><svg id="weather-chart" role="img"></svg></div>
+          <p class="data-note">Lluvia: 1 indica precipitación detectada. El viento y las temperaturas son mediciones meteorológicas periódicas, no datos vuelta a vuelta.</p>
+        </div>
+      </section>
+      <footer class="page-footer"><p>CONDICIONES METEOROLÓGICAS · DATOS <a href="https://openf1.org" target="_blank" rel="noreferrer">OPENF1</a></p><p><a href="../">TODAS LAS HERRAMIENTAS ↗</a></p></footer>
+    </main>
+  </body>
+</html>
