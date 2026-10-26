@@ -30,7 +30,8 @@ const state = {
   totalLaps: 0,
   currentLap: 1,
   playing: false,
-  timer: 0,
+  animationFrame: 0,
+  previousFrame: 0,
   loadId: 0,
 };
 
@@ -307,8 +308,24 @@ function drawChart() {
   state.drivers.forEach((entry, index) => {
     const path = svgElement("path", { class: "position-line", stroke: entry.color, "data-driver-index": index });
     const dot = svgElement("circle", { class: "current-dot", r: 4, fill: entry.color, "data-driver-index": index, hidden: true });
-    const label = svgElement("text", { class: "driver-label", fill: entry.color, "data-driver-index": index });
-    plot.append(path, dot, label);
+    plot.append(path, dot);
+  });
+  state.drivers.forEach((entry, index) => {
+    const label = svgElement("g", { class: "driver-label-group", "data-driver-index": index });
+    const labelWidth = entry.code.length * 7 + 10;
+    const background = svgElement("rect", {
+      class: "driver-label-background",
+      x: 0,
+      y: -7,
+      width: labelWidth,
+      height: 14,
+      rx: 2,
+      fill: "#080a0c",
+      stroke: entry.color,
+    });
+    const text = svgElement("text", { class: "driver-label", x: 5, y: 3.5, fill: entry.color }, entry.code);
+    label.append(background, text);
+    plot.append(label);
   });
   const cursor = svgElement("line", { class: "lap-cursor", y1: margin.top, y2: margin.top + plotHeight });
   plot.append(cursor);
@@ -342,47 +359,67 @@ function renderLap() {
     const visiblePoints = entry.points.filter((point) => point.lap <= state.currentLap);
     const path = elements.chart.querySelector(`.position-line[data-driver-index="${index}"]`);
     const dot = elements.chart.querySelector(`.current-dot[data-driver-index="${index}"]`);
-    const label = elements.chart.querySelector(`.driver-label[data-driver-index="${index}"]`);
+    const label = elements.chart.querySelector(`.driver-label-group[data-driver-index="${index}"]`);
     if (!visiblePoints.length) {
       path.setAttribute("d", "");
       dot.setAttribute("hidden", "");
       label.textContent = "";
       return;
     }
-    const pathData = visiblePoints.map((point, pointIndex) => `${pointIndex ? "L" : "M"}${x(point.lap).toFixed(1)},${y(point.position).toFixed(1)}`).join(" ");
-    const latest = visiblePoints[visiblePoints.length - 1];
+    const previous = visiblePoints[visiblePoints.length - 1];
+    const next = entry.points.find((point) => point.lap > state.currentLap);
+    let latest = previous;
+    if (next) {
+      const progress = (state.currentLap - previous.lap) / (next.lap - previous.lap);
+      latest = {
+        lap: state.currentLap,
+        position: previous.position + (next.position - previous.position) * progress,
+      };
+    }
+    const pathPoints = [
+      ...visiblePoints.slice(0, -1),
+      latest,
+    ];
+    const pathData = pathPoints
+      .map((point, pointIndex) => `${pointIndex ? "L" : "M"}${x(point.lap).toFixed(1)},${y(point.position).toFixed(1)}`)
+      .join(" ");
     path.setAttribute("d", pathData);
     dot.removeAttribute("hidden");
     dot.setAttribute("cx", x(latest.lap));
     dot.setAttribute("cy", y(latest.position));
-    label.setAttribute("x", width - 72);
-    label.setAttribute("y", y(latest.position) + 3);
-    label.textContent = entry.code;
+    label.setAttribute("transform", `translate(${Math.min(width - 24, x(latest.lap) + 8)} ${y(latest.position)})`);
   });
   const cursor = elements.chart.querySelector(".lap-cursor");
   cursor.setAttribute("x1", x(state.currentLap));
   cursor.setAttribute("x2", x(state.currentLap));
-  elements.currentLap.textContent = String(state.currentLap);
-  elements.slider.value = String(state.currentLap);
+  elements.currentLap.textContent = String(Math.floor(state.currentLap));
+  elements.slider.value = state.currentLap.toFixed(1);
 }
 
 function stopPlayback() {
   state.playing = false;
-  window.clearTimeout(state.timer);
+  window.cancelAnimationFrame(state.animationFrame);
+  state.previousFrame = 0;
   elements.playIcon.hidden = false;
   elements.pauseIcon.hidden = true;
   elements.play.setAttribute("aria-label", "Reproducir animación");
 }
 
-function advance() {
+function advance(timestamp) {
   if (!state.playing) return;
+  if (!state.previousFrame) {
+    state.previousFrame = timestamp;
+  } else {
+    const elapsed = Math.min(timestamp - state.previousFrame, 50);
+    state.previousFrame = timestamp;
+    state.currentLap = Math.min(state.totalLaps, state.currentLap + elapsed / Number(elements.speed.value));
+    renderLap();
+  }
   if (state.currentLap >= state.totalLaps) {
     stopPlayback();
     return;
   }
-  state.currentLap += 1;
-  renderLap();
-  state.timer = window.setTimeout(advance, Number(elements.speed.value));
+  state.animationFrame = window.requestAnimationFrame(advance);
 }
 
 function togglePlayback() {
@@ -396,10 +433,11 @@ function togglePlayback() {
     renderLap();
   }
   state.playing = true;
+  state.previousFrame = 0;
   elements.playIcon.hidden = true;
   elements.pauseIcon.hidden = false;
   elements.play.setAttribute("aria-label", "Pausar animación");
-  state.timer = window.setTimeout(advance, Number(elements.speed.value));
+  state.animationFrame = window.requestAnimationFrame(advance);
 }
 
 elements.season.addEventListener("change", () => loadRaces(elements.season.value));
@@ -415,11 +453,6 @@ elements.slider.addEventListener("input", () => {
   stopPlayback();
   state.currentLap = Number(elements.slider.value);
   renderLap();
-});
-elements.speed.addEventListener("change", () => {
-  if (!state.playing) return;
-  window.clearTimeout(state.timer);
-  state.timer = window.setTimeout(advance, Number(elements.speed.value));
 });
 
 loadRaces(elements.season.value);
