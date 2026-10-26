@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0e">
+    <meta name="description" content="Animación vuelta a vuelta de las posiciones de los pilotos en carreras de Fórmula 1.">
+    <title>Race Replay · F1 Metrics Lab</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="../" aria-label="Volver a F1 Metrics Lab">
+          <span class="wordmark-mark" aria-hidden="true">F1</span>
+          <span class="wordmark-copy">METRICS <span>LAB</span></span>
+        </a>
+        <div class="topbar-context"><span class="live-dot" aria-hidden="true"></span><span>RACE REPLAY</span></div>
+        <a class="api-link" href="https://openf1.org/docs/" target="_blank" rel="noreferrer">DATOS OPENF1 <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <section class="intro">
+        <div>
+          <p class="eyebrow"><span>04</span> / RACE POSITION HISTORY</p>
+          <h1>La carrera,<br><span>vuelta a vuelta.</span></h1>
+          <p class="intro-copy">Seguí cómo cambia la clasificación de cada piloto durante la carrera.</p>
+        </div>
+        <div class="season-stamp" aria-hidden="true"><span>RACE</span><strong>REPLAY</strong><i></i><span>POSITION / LAP</span></div>
+      </section>
+
+      <section class="controls panel" aria-label="Elegir carrera">
+        <label class="select-field" for="season-select">
+          <span>TEMPORADA</span>
+          <select id="season-select" aria-label="Temporada">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+          </select>
+        </label>
+        <label class="select-field race-field" for="race-select">
+          <span>CARRERA</span>
+          <select id="race-select" disabled aria-label="Carrera">
+            <option value="">Cargando carreras…</option>
+          </select>
+        </label>
+        <div class="data-status" id="data-status" data-state="loading" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="status-label">CARGANDO CARRERAS</span>
+        </div>
+      </section>
+
+      <section class="replay-panel panel" aria-labelledby="chart-title">
+        <header class="chart-heading">
+          <div>
+            <p class="eyebrow">POSITION CHART <span class="heading-index">/ 01</span></p>
+            <h2 id="chart-title">Posiciones por vuelta</h2>
+          </div>
+          <div class="race-heading" id="race-heading">SELECCIONÁ UNA CARRERA</div>
+        </header>
+
+        <div class="chart-wrap" id="chart-wrap">
+          <div class="empty-state" id="empty-state" role="status">
+            <span class="empty-mark" aria-hidden="true">↗</span>
+            <p>Elegí una temporada y una carrera para cargar la clasificación.</p>
+          </div>
+          <svg id="position-chart" class="position-chart" role="img" aria-label="Animación de posiciones de carrera" hidden></svg>
+        </div>
+
+        <div class="replay-controls">
+          <button class="play-button" id="play-button" type="button" aria-label="Reproducir animación" disabled>
+            <svg id="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"></path></svg>
+            <svg id="pause-icon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"></path></svg>
+          </button>
+          <span class="lap-readout">VUELTA <strong id="current-lap">--</strong><span id="total-laps">/ --</span></span>
+          <input id="lap-slider" type="range" min="1" max="1" value="1" step="1" aria-label="Seleccionar vuelta" disabled>
+          <label class="speed-field" for="speed-select">VELOCIDAD
+            <select id="speed-select" aria-label="Velocidad de animación">
+              <option value="1400">1×</option>
+              <option value="750" selected>2×</option>
+              <option value="400">4×</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <p>POSICIONES OFICIALES POR VUELTA · DATOS <a href="https://openf1.org" target="_blank" rel="noreferrer">OPENF1</a></p>
+        <p>F1 METRICS LAB · <a href="../">TODAS LAS HERRAMIENTAS ↗</a></p>
+      </footer>
+    </main>
+  </body>
+</html>
