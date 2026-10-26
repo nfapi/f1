@@ -216,6 +216,9 @@ function makeSeries(drivers, laps, positions) {
       }
       if (lastPosition !== null) points.push({ lap: lap.lap, position: lastPosition });
     }
+    if (points.length && positionRecords.length) {
+      points[points.length - 1].position = positionRecords[positionRecords.length - 1].position;
+    }
     return {
       driver,
       code: driverCode(driver),
