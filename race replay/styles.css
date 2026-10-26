@@ -78,7 +78,10 @@ h1 span { color: var(--accent); }
 .chart-heading .eyebrow { margin-bottom: 6px; }
 .heading-index { color: var(--muted) !important; }
 h2 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.04em; }
+.chart-heading-meta { display: grid; justify-items: end; gap: 9px; }
 .race-heading { color: #a0a6a5; font: 9px var(--mono); letter-spacing: .1em; text-align: right; }
+.pit-legend { display: flex; align-items: center; gap: 6px; color: #e6b54e; font: 8px var(--mono); letter-spacing: .09em; }
+.pit-legend i { width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid #e6b54e; background: #30230a; }
 .chart-wrap { position: relative; min-height: 300px; border: 1px solid #212729; overflow-x: auto; background: #080a0c; }
 .position-chart { display: block; width: 100%; min-width: 700px; height: clamp(360px, 52vw, 590px); }
 .position-chart text { font-family: var(--mono); }
@@ -89,6 +92,8 @@ h2 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.04em; }
 .driver-label-group { pointer-events: none; }
 .driver-label-background { fill: #080a0c; stroke-width: 1; }
 .driver-label { font-size: 9px; font-weight: 500; }
+.pit-stop-marker { fill: #e6b54e; stroke: #080a0c; stroke-width: 1.5; }
+.pit-stop-marker[hidden] { display: none; }
 .current-dot { stroke: #080a0c; stroke-width: 2; }
 .lap-cursor { stroke: #ffffff; stroke-width: 1; stroke-dasharray: 3 5; opacity: .28; }
 .empty-state { min-height: 300px; display: grid; align-content: center; justify-items: center; gap: 10px; padding: 30px; color: var(--muted); text-align: center; }
@@ -125,6 +130,7 @@ h2 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.04em; }
   .data-status { grid-column: 1 / -1; min-height: 20px; padding: 0; }
   .replay-panel { padding: 13px 11px 11px; }
   .chart-heading { align-items: start; flex-direction: column; }
+  .chart-heading-meta { justify-items: start; }
   .race-heading { text-align: left; }
   .position-chart { width: 760px; height: 440px; }
   .replay-controls { grid-template-columns: 36px auto minmax(75px, 1fr); gap: 9px; }

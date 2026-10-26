@@ -57,7 +57,10 @@
             <p class="eyebrow">POSITION CHART <span class="heading-index">/ 01</span></p>
             <h2 id="chart-title">Posiciones por vuelta</h2>
           </div>
-          <div class="race-heading" id="race-heading">SELECCIONÁ UNA CARRERA</div>
+          <div class="chart-heading-meta">
+            <span class="pit-legend"><i aria-hidden="true"></i> PARADA EN BOXES</span>
+            <span class="race-heading" id="race-heading">SELECCIONÁ UNA CARRERA</span>
+          </div>
         </header>
 
         <div class="chart-wrap" id="chart-wrap">
@@ -78,8 +81,9 @@
           <label class="speed-field" for="speed-select">VELOCIDAD
             <select id="speed-select" aria-label="Velocidad de animación">
               <option value="1400">1×</option>
-              <option value="750" selected>2×</option>
+              <option value="750">2×</option>
               <option value="400">4×</option>
+              <option value="200" selected>8×</option>
             </select>
           </label>
         </div>

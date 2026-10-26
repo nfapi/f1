@@ -2,8 +2,12 @@
 
 const API_ROOT = "https://api.openf1.org/v1";
 const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_INTERVAL_MS = 400;
+const MAX_RATE_LIMIT_RETRIES = 2;
 const COLORS = ["#66d9c7", "#f3bd45", "#ef5967", "#7d8bff", "#dc83c6", "#59b9ff", "#ff8b4d", "#c3d85a"];
 const SVG_NS = "http://www.w3.org/2000/svg";
+let requestQueue = Promise.resolve();
+let nextRequestAt = 0;
 
 const elements = {
   season: document.querySelector("#season-select"),
@@ -44,30 +48,56 @@ function buildUrl(endpoint, parameters) {
   return `${API_ROOT}/${endpoint}?${new URLSearchParams(parameters)}`;
 }
 
+function scheduleRequest(request) {
+  const scheduled = requestQueue.then(async () => {
+    const wait = Math.max(0, nextRequestAt - Date.now());
+    if (wait > 0) await new Promise((resolve) => window.setTimeout(resolve, wait));
+    nextRequestAt = Date.now() + REQUEST_INTERVAL_MS;
+    return request();
+  });
+  requestQueue = scheduled.catch(() => {});
+  return scheduled;
+}
+
 async function fetchRecords(endpoint, parameters) {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetch(buildUrl(endpoint, parameters), {
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`OpenF1 respondió ${response.status} al consultar ${endpoint}.`);
+  for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt += 1) {
+    try {
+      const response = await scheduleRequest(async () => {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        try {
+          return await fetch(buildUrl(endpoint, parameters), {
+            headers: { Accept: "application/json" },
+            signal: controller.signal,
+          });
+        } finally {
+          window.clearTimeout(timeout);
+        }
+      });
+      if (response.status === 429 && attempt < MAX_RATE_LIMIT_RETRIES) {
+        const retryAfter = Number(response.headers.get("Retry-After"));
+        await new Promise((resolve) => window.setTimeout(
+          resolve,
+          Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : (attempt + 1) * 1000,
+        ));
+        continue;
+      }
+      if (!response.ok) {
+        throw new Error(`OpenF1 respondió ${response.status} al consultar ${endpoint}.`);
+      }
+      const records = await response.json();
+      if (!Array.isArray(records)) {
+        throw new Error(`OpenF1 devolvió una respuesta no válida para ${endpoint}.`);
+      }
+      return records;
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error(`La consulta a OpenF1 (${endpoint}) superó el tiempo de espera.`);
+      }
+      throw error;
     }
-    const records = await response.json();
-    if (!Array.isArray(records)) {
-      throw new Error(`OpenF1 devolvió una respuesta no válida para ${endpoint}.`);
-    }
-    return records;
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error(`La consulta a OpenF1 (${endpoint}) superó el tiempo de espera.`);
-    }
-    throw error;
-  } finally {
-    window.clearTimeout(timeout);
   }
+  throw new Error(`OpenF1 rechazó varias consultas a ${endpoint}.`);
 }
 
 function showError(error) {
@@ -172,7 +202,7 @@ function driverCode(driver) {
   return (code || String(driver.driver_number)).toUpperCase();
 }
 
-function makeSeries(drivers, laps, positions) {
+function makeSeries(drivers, laps, positions, pitStops) {
   const positionByDriver = new Map();
   for (const position of positions) {
     const date = Date.parse(position.date);
@@ -202,6 +232,14 @@ function makeSeries(drivers, laps, positions) {
   const series = driverRecords.map((driver, index) => {
     const positionRecords = positionByDriver.get(Number(driver.driver_number)) || [];
     const lapRecords = (lapsByDriver.get(Number(driver.driver_number)) || []).sort((first, second) => first.lap - second.lap);
+    const driverPitStops = pitStops
+      .filter((stop) => Number(stop.driver_number) === Number(driver.driver_number))
+      .map((stop) => ({
+        lap: Number(stop.lap_number),
+        duration: Number(stop.pit_duration),
+      }))
+      .filter((stop) => Number.isInteger(stop.lap) && stop.lap > 0)
+      .sort((first, second) => first.lap - second.lap);
     let positionIndex = -1;
     let lastPosition = null;
     const points = [];
@@ -224,6 +262,7 @@ function makeSeries(drivers, laps, positions) {
       code: driverCode(driver),
       color: driverColor(driver, index),
       points,
+      pitStops: driverPitStops,
     };
   }).filter((entry) => entry.points.length > 0);
 
@@ -237,10 +276,11 @@ async function loadRace(sessionKey) {
   elements.raceHeading.textContent = "CARGANDO CARRERA";
   setStatus("CARGANDO CLASIFICACIÓN", "loading");
   try {
-    const [drivers, laps, positions] = await Promise.all([
+    const [drivers, laps, positions, pitStops] = await Promise.all([
       fetchRecords("drivers", { session_key: sessionKey }),
       fetchRecords("laps", { session_key: sessionKey }),
       fetchRecords("position", { session_key: sessionKey }),
+      fetchRecords("pit", { session_key: sessionKey }),
     ]);
     if (loadId !== state.loadId) return;
     if (!laps.length || !positions.length) {
@@ -248,7 +288,7 @@ async function loadRace(sessionKey) {
     }
 
     const race = state.races.find((session) => String(session.session_key) === String(sessionKey));
-    const result = makeSeries(drivers, laps, positions);
+    const result = makeSeries(drivers, laps, positions, pitStops);
     if (!result.series.length || result.maxLap < 2) {
       throw new Error("No hay suficientes datos de posiciones por vuelta para mostrar esta carrera.");
     }
@@ -267,7 +307,8 @@ async function loadRace(sessionKey) {
     elements.play.disabled = false;
     drawChart();
     renderLap();
-    setStatus(`${state.drivers.length} PILOTOS · ${state.totalLaps} VUELTAS`);
+    const totalPitStops = state.drivers.reduce((count, driver) => count + driver.pitStops.length, 0);
+    setStatus(`${state.drivers.length} PILOTOS · ${state.totalLaps} VUELTAS · ${totalPitStops} PARADAS`);
   } catch (error) {
     if (loadId === state.loadId) showError(error);
   }
@@ -330,6 +371,27 @@ function drawChart() {
     label.append(background, text);
     plot.append(label);
   });
+  const pitLayer = svgElement("g", { class: "pit-stop-layer", "aria-label": "Paradas en boxes" });
+  state.drivers.forEach((entry, index) => {
+    for (const [stopIndex, stop] of entry.pitStops.entries()) {
+      const point = entry.points.reduce((nearest, candidate) => (
+        Math.abs(candidate.lap - stop.lap) < Math.abs(nearest.lap - stop.lap) ? candidate : nearest
+      ), entry.points[0]);
+      if (!point) continue;
+      const marker = svgElement("path", {
+        class: "pit-stop-marker",
+        d: "M0 -6 L6 0 L0 6 L-6 0 Z",
+        transform: `translate(${x(stop.lap)} ${y(point.position)})`,
+        "data-driver-index": index,
+        "data-stop-index": stopIndex,
+        hidden: true,
+      });
+      const duration = Number.isFinite(stop.duration) ? ` · ${stop.duration.toFixed(1)} s` : "";
+      marker.append(svgElement("title", {}, `${entry.driver.full_name} · Vuelta ${stop.lap}${duration}`));
+      pitLayer.append(marker);
+    }
+  });
+  plot.append(pitLayer);
   const cursor = svgElement("line", { class: "lap-cursor", y1: margin.top, y2: margin.top + plotHeight });
   plot.append(cursor);
   elements.chart.append(plot);
@@ -391,6 +453,13 @@ function renderLap() {
     dot.setAttribute("cx", x(latest.lap));
     dot.setAttribute("cy", y(latest.position));
     label.setAttribute("transform", `translate(${Math.min(width - 24, x(latest.lap) + 8)} ${y(latest.position)})`);
+  });
+  elements.chart.querySelectorAll(".pit-stop-marker").forEach((marker) => {
+    const driverIndex = Number(marker.dataset.driverIndex);
+    const stopIndex = Number(marker.dataset.stopIndex);
+    const stop = state.drivers[driverIndex]?.pitStops[stopIndex];
+    if (stop && stop.lap <= state.currentLap) marker.removeAttribute("hidden");
+    else marker.setAttribute("hidden", "");
   });
   const cursor = elements.chart.querySelector(".lap-cursor");
   cursor.setAttribute("x1", x(state.currentLap));
